@@ -1,4 +1,4 @@
-# Harmoni Incident Response App
+# Harmonia Incident Response App
 
 A comprehensive threat intelligence platform that provides real-time insights into cybersecurity threats, vulnerabilities, and attack techniques. Built with cutting-edge AI to help security teams make data-driven decisions and respond to incidents faster.
 
@@ -46,8 +46,8 @@ A comprehensive threat intelligence platform that provides real-time insights in
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd incident_response_app
+   git clone https://github.com/rod5435/harmonia-incident-response-app.git
+   cd harmonia-incident-response-app
    ```
 
 2. **Create a virtual environment**
@@ -133,7 +133,7 @@ The ETL pipeline downloads data from:
 ## 📁 Project Structure
 
 ```
-incident_response_app/
+harmonia-incident-response-app/
 ├── app.py                  # Main Flask application
 ├── config.py               # Configuration settings
 ├── models.py               # SQLAlchemy database models
