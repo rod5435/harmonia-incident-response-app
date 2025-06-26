@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-brain me-2"></i>AI-Powered Threat Analysis</h2>
+
+<div class="row">
+    <!-- Threat Pattern Analysis -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Threat Pattern Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Analyze emerging threat patterns and trends using AI.</p>
+                <div class="mb-3">
+                    <label for="analysis-days" class="form-label">Analysis Period (days)</label>
+                    <select id="analysis-days" class="form-select">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="180">Last 6 months</option>
+                    </select>
+                </div>
+                <button id="analyze-patterns" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Analyze Patterns
+                </button>
+                <div id="pattern-analysis-result" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Analyzing threat patterns...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Threat Report Generation -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Generate Threat Report
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate comprehensive threat intelligence reports.</p>
+                <div class="mb-3">
+                    <label for="report-type" class="form-label">Report Type</label>
+                    <select id="report-type" class="form-select">
+                        <option value="executive">Executive Summary</option>
+                        <option value="technical">Technical Analysis</option>
+                        <option value="comprehensive" selected>Comprehensive Report</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="report-days" class="form-label">Time Period (days)</label>
+                    <select id="report-days" class="form-select">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                </div>
+                <button id="generate-report" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Generate Report
+                </button>
+                <div id="report-generation-result" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Generating report...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Threat Correlation -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-project-diagram me-2"></i>Threat Correlation
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Find related threats and analyze correlations.</p>
+                <div class="mb-3">
+                    <label for="correlation-type" class="form-label">Correlation Method</label>
+                    <select id="correlation-type" class="form-select">
+                        <option value="search">Search Term</option>
+                        <option value="indicator">Indicator ID</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="search-term-group">
+                    <label for="correlation-search" class="form-label">Search Term</label>
+                    <input type="text" id="correlation-search" class="form-control" 
+                           placeholder="Enter threat name, description, or value">
+                </div>
+                <div class="mb-3" id="indicator-id-group" style="display: none;">
+                    <label for="correlation-indicator-id" class="form-label">Indicator ID</label>
+                    <input type="number" id="correlation-indicator-id" class="form-control" 
+                           placeholder="Enter indicator ID">
+                </div>
+                <button id="correlate-threats" class="btn btn-warning">
+                    <i class="fas fa-link me-2"></i>Correlate Threats
+                </button>
+                <div id="correlation-result" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Analyzing correlations...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attack Chain Analysis -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>MITRE ATT&CK Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Analyze MITRE ATT&CK attack chains and defensive strategies.</p>
+                <div class="mb-3">
+                    <label for="attack-analysis-type" class="form-label">Analysis Type</label>
+                    <select id="attack-analysis-type" class="form-select">
+                        <option value="overview">Overall Attack Patterns</option>
+                        <option value="specific">Specific Technique</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="technique-name-group" style="display: none;">
+                    <label for="technique-name" class="form-label">MITRE Technique Name</label>
+                    <input type="text" id="technique-name" class="form-control" 
+                           placeholder="e.g., T1055, Process Injection">
+                </div>
+                <button id="analyze-attack-chain" class="btn btn-danger">
+                    <i class="fas fa-crosshairs me-2"></i>Analyze Attack Chain
+                </button>
+                <div id="attack-chain-result" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Analyzing attack chains...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Summary -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Recent AI Insights Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Summary of recent AI-generated security insights and recommendations.</p>
+                <button id="get-insights-summary" class="btn btn-info">
+                    <i class="fas fa-refresh me-2"></i>Get Insights Summary
+                </button>
+                <div id="insights-summary-result" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Generating insights summary...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Display Area -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Analysis Results
+                </h5>
+                <button id="clear-results" class="btn btn-outline-light btn-sm float-end">
+                    <i class="fas fa-times me-1"></i>Clear
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="results-content">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>Select an analysis option above to get started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Threat Pattern Analysis
+document.getElementById('analyze-patterns').addEventListener('click', function() {
+    const days = document.getElementById('analysis-days').value;
+    const resultDiv = document.getElementById('pattern-analysis-result');
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing threat patterns...</div>';
+    
+    fetch(`/api/threat-analysis?days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            } else {
+                displayResults('Threat Pattern Analysis', data.analysis);
+                resultDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error analyzing patterns</div>';
+        });
+});
+
+// Generate Threat Report
+document.getElementById('generate-report').addEventListener('click', function() {
+    const reportType = document.getElementById('report-type').value;
+    const days = document.getElementById('report-days').value;
+    const resultDiv = document.getElementById('report-generation-result');
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Generating report...</div>';
+    
+    fetch(`/api/generate-report?type=${reportType}&days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            } else {
+                displayResults(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Threat Report`, data.report);
+                resultDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error generating report</div>';
+        });
+});
+
+// Threat Correlation
+document.getElementById('correlation-type').addEventListener('change', function() {
+    const searchGroup = document.getElementById('search-term-group');
+    const indicatorGroup = document.getElementById('indicator-id-group');
+    
+    if (this.value === 'search') {
+        searchGroup.style.display = 'block';
+        indicatorGroup.style.display = 'none';
+    } else {
+        searchGroup.style.display = 'none';
+        indicatorGroup.style.display = 'block';
+    }
+});
+
+document.getElementById('correlate-threats').addEventListener('click', function() {
+    const correlationType = document.getElementById('correlation-type').value;
+    const resultDiv = document.getElementById('correlation-result');
+    
+    let params = new URLSearchParams();
+    
+    if (correlationType === 'search') {
+        const searchTerm = document.getElementById('correlation-search').value.trim();
+        if (!searchTerm) {
+            alert('Please enter a search term');
+            return;
+        }
+        params.append('search_term', searchTerm);
+    } else {
+        const indicatorId = document.getElementById('correlation-indicator-id').value.trim();
+        if (!indicatorId) {
+            alert('Please enter an indicator ID');
+            return;
+        }
+        params.append('indicator_id', indicatorId);
+    }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing correlations...</div>';
+    
+    fetch(`/api/correlate-threats?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            } else {
+                displayResults('Threat Correlation Analysis', data.correlation);
+                resultDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error analyzing correlations</div>';
+        });
+});
+
+// Attack Chain Analysis
+document.getElementById('attack-analysis-type').addEventListener('change', function() {
+    const techniqueGroup = document.getElementById('technique-name-group');
+    techniqueGroup.style.display = this.value === 'specific' ? 'block' : 'none';
+});
+
+document.getElementById('analyze-attack-chain').addEventListener('click', function() {
+    const analysisType = document.getElementById('attack-analysis-type').value;
+    const resultDiv = document.getElementById('attack-chain-result');
+    
+    let params = new URLSearchParams();
+    
+    if (analysisType === 'specific') {
+        const techniqueName = document.getElementById('technique-name').value.trim();
+        if (!techniqueName) {
+            alert('Please enter a technique name');
+            return;
+        }
+        params.append('technique', techniqueName);
+    }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing attack chains...</div>';
+    
+    fetch(`/api/attack-chain-analysis?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            } else {
+                displayResults('MITRE ATT&CK Attack Chain Analysis', data.analysis);
+                resultDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error analyzing attack chains</div>';
+        });
+});
+
+// AI Insights Summary
+document.getElementById('get-insights-summary').addEventListener('click', function() {
+    const resultDiv = document.getElementById('insights-summary-result');
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Generating insights summary...</div>';
+    
+    fetch('/api/ai-insights-summary')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            } else {
+                displayResults('AI Insights Summary', data.summary);
+                resultDiv.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error generating insights summary</div>';
+        });
+});
+
+// Clear Results
+document.getElementById('clear-results').addEventListener('click', function() {
+    document.getElementById('results-content').innerHTML = `
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-chart-line fa-3x mb-3"></i>
+            <p>Select an analysis option above to get started</p>
+        </div>
+    `;
+});
+
+// Display Results Function
+function displayResults(title, content) {
+    const resultsContent = document.getElementById('results-content');
+    const timestamp = new Date().toLocaleString();
+    
+    const resultHtml = `
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>${title}</h6>
+                <small class="text-muted">${timestamp}</small>
+            </div>
+            <div class="border rounded p-3 bg-light">
+                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${content}</pre>
+            </div>
+        </div>
+    `;
+    
+    // If there's existing content, prepend the new result
+    const existingContent = resultsContent.innerHTML;
+    if (existingContent.includes('Select an analysis option')) {
+        resultsContent.innerHTML = resultHtml;
+    } else {
+        resultsContent.innerHTML = resultHtml + existingContent;
+    }
+}
+</script>
+{% endblock %} 

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db, Indicator, UserQuery
 from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options
-from openai_integration import ask_gpt
+from openai_integration import ask_gpt, analyze_threat_patterns, generate_threat_report, correlate_threats, analyze_attack_chain, get_ai_insights_summary
 from datetime import datetime
 import traceback
 
@@ -202,6 +202,72 @@ def create_app():
             db.session.commit()
             return render_template('ai_insights.html', question=question, answer=answer)
         return render_template('ai_insights.html', question=None, answer=None)
+
+    # Enhanced AI Features Routes
+    @app.route('/ai-analysis')
+    def ai_analysis():
+        """Enhanced AI Analysis page"""
+        return render_template('ai_analysis.html')
+
+    @app.route('/api/threat-analysis')
+    def api_threat_analysis():
+        """Threat pattern analysis API"""
+        try:
+            days = int(request.args.get('days', default=30))
+            analysis = analyze_threat_patterns(days)
+            return jsonify({'analysis': analysis})
+        except Exception as e:
+            print(f"Threat analysis error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/generate-report')
+    def api_generate_report():
+        """Generate threat intelligence report API"""
+        try:
+            report_type = request.args.get('type', default='comprehensive')
+            days = int(request.args.get('days', default=30))
+            report = generate_threat_report(report_type, days)
+            return jsonify({'report': report})
+        except Exception as e:
+            print(f"Report generation error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/correlate-threats')
+    def api_correlate_threats():
+        """Threat correlation API"""
+        try:
+            indicator_id = request.args.get('indicator_id', default=None)
+            search_term = request.args.get('search_term', default=None)
+            
+            if indicator_id:
+                indicator_id = int(indicator_id)
+            
+            correlation = correlate_threats(indicator_id, search_term)
+            return jsonify({'correlation': correlation})
+        except Exception as e:
+            print(f"Threat correlation error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/attack-chain-analysis')
+    def api_attack_chain_analysis():
+        """MITRE ATT&CK attack chain analysis API"""
+        try:
+            technique_name = request.args.get('technique', default=None)
+            analysis = analyze_attack_chain(technique_name)
+            return jsonify({'analysis': analysis})
+        except Exception as e:
+            print(f"Attack chain analysis error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/ai-insights-summary')
+    def api_ai_insights_summary():
+        """Get AI insights summary API"""
+        try:
+            summary = get_ai_insights_summary()
+            return jsonify({'summary': summary})
+        except Exception as e:
+            print(f"AI insights summary error: {e}")
+            return jsonify({'error': str(e)}), 500
 
     return app
 
