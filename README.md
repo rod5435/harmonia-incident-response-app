@@ -213,3 +213,14 @@ For support and questions:
 
 **Built with ❤️ for the cybersecurity community**
 
+�� Key Features:
+✅ Global search across all text fields
+✅ Type filtering (MITRE Technique, CVE Vulnerability, etc.)
+✅ Severity range filtering (min/max values)
+✅ Date range filtering (from/to dates)
+✅ Source filtering (MITRE, CISA, etc.)
+✅ Sorting by any column
+✅ Pagination with navigation
+✅ Real-time search with debouncing
+✅ Clear filters functionality
+✅ Results summary with counts

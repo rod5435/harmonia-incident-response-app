@@ -1,6 +1,6 @@
 from models import Indicator
 from models import db
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from datetime import datetime, timedelta
 
 def get_indicator_counts():
@@ -14,6 +14,91 @@ def get_indicators_by_type(indicator_type=None, limit=100):
     if indicator_type and indicator_type.lower() != 'all':
         query = query.filter_by(indicator_type=indicator_type)
     return query.limit(limit).all()
+
+def advanced_search_indicators(
+    search_term=None, 
+    indicator_type=None, 
+    severity_min=None, 
+    severity_max=None,
+    date_from=None,
+    date_to=None,
+    source=None,
+    page=1,
+    per_page=20,
+    sort_by='id',
+    sort_order='desc'
+):
+    """
+    Advanced search function with multiple filters and pagination
+    """
+    query = Indicator.query
+    
+    # Global search across multiple fields
+    if search_term and search_term.strip():
+        search_filter = or_(
+            Indicator.name.ilike(f'%{search_term.strip()}%'),
+            Indicator.description.ilike(f'%{search_term.strip()}%'),
+            Indicator.indicator_value.ilike(f'%{search_term.strip()}%'),
+            Indicator.source.ilike(f'%{search_term.strip()}%')
+        )
+        query = query.filter(search_filter)
+    
+    # Filter by indicator type
+    if indicator_type and indicator_type.strip() and indicator_type.lower() != 'all':
+        query = query.filter_by(indicator_type=indicator_type.strip())
+    
+    # Filter by severity score range
+    if severity_min is not None or severity_max is not None:
+        severity_filters = []
+        if severity_min is not None and str(severity_min).strip():
+            try:
+                severity_filters.append(Indicator.severity_score >= str(severity_min))
+            except:
+                pass
+        if severity_max is not None and str(severity_max).strip():
+            try:
+                severity_filters.append(Indicator.severity_score <= str(severity_max))
+            except:
+                pass
+        if severity_filters:
+            query = query.filter(and_(*severity_filters))
+    
+    # Filter by date range
+    if date_from and date_from.strip():
+        query = query.filter(Indicator.date_added >= date_from.strip())
+    if date_to and date_to.strip():
+        query = query.filter(Indicator.date_added <= date_to.strip())
+    
+    # Filter by source
+    if source and source.strip():
+        query = query.filter(Indicator.source.ilike(f'%{source.strip()}%'))
+    
+    # Sorting
+    sort_column = getattr(Indicator, sort_by, Indicator.id)
+    if sort_order.lower() == 'desc':
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+    
+    # Pagination
+    total = query.count()
+    pagination = query.paginate(
+        page=page, 
+        per_page=per_page, 
+        error_out=False
+    )
+    
+    return {
+        'items': pagination.items,
+        'total': total,
+        'pages': pagination.pages,
+        'current_page': page,
+        'per_page': per_page,
+        'has_prev': pagination.has_prev,
+        'has_next': pagination.has_next,
+        'prev_num': pagination.prev_num,
+        'next_num': pagination.next_num
+    }
 
 def get_severity_distribution():
     """Get distribution of indicators by severity score"""
@@ -89,4 +174,29 @@ def get_dashboard_stats():
         'source_distribution': get_source_distribution(),
         'recent_trend': get_recent_indicators(7),
         'top_techniques': get_top_techniques(5)
+    }
+
+def get_filter_options():
+    """Get available filter options for the UI"""
+    # Get unique sources
+    sources = db.session.query(Indicator.source).distinct().all()
+    sources = [source[0] for source in sources if source[0]]
+    
+    # Get unique severity scores
+    severities = db.session.query(Indicator.severity_score).distinct().all()
+    severities = [sev[0] for sev in severities if sev[0]]
+    
+    # Get date range
+    date_range = db.session.query(
+        func.min(Indicator.date_added),
+        func.max(Indicator.date_added)
+    ).first()
+    
+    return {
+        'sources': sources,
+        'severities': severities,
+        'date_range': {
+            'min': date_range[0] if date_range[0] else None,
+            'max': date_range[1] if date_range[1] else None
+        }
     }
