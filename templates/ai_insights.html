@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-robot me-2"></i>AI Insights Chat</h2>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <form method="POST" id="ai-form">
+          <div class="mb-3">
+            <label for="question" class="form-label">
+              <i class="fas fa-question-circle me-2"></i>Ask a question about the incident data:
+            </label>
+            <textarea 
+              id="question" 
+              name="question" 
+              class="form-control" 
+              rows="4" 
+              required 
+              placeholder="e.g., What are the most common attack techniques? What vulnerabilities should I prioritize?"
+            >{{ question or '' }}</textarea>
+            <div class="form-text">
+              <i class="fas fa-info-circle me-1"></i>
+              Press Enter to submit, or click the button below
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane me-2"></i>Ask GPT
+          </button>
+        </form>
+
+        {% if answer %}
+        <div class="mt-4">
+          <h5><i class="fas fa-lightbulb me-2"></i>AI Response:</h5>
+          <div class="alert alert-info" style="white-space: pre-wrap; border-radius: 10px;">
+            {{ answer }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-lightbulb me-2"></i>Suggested Questions</h5>
+        <div class="list-group list-group-flush">
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="What are the most common MITRE ATT&CK techniques in our data?">
+            <i class="fas fa-chart-bar me-2"></i>Most common attack techniques
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="Which vulnerabilities have the highest severity scores?">
+            <i class="fas fa-exclamation-triangle me-2"></i>High severity vulnerabilities
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="What are the recent trends in threat intelligence?">
+            <i class="fas fa-trending-up me-2"></i>Recent threat trends
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="How should I prioritize my security response based on this data?">
+            <i class="fas fa-shield-alt me-2"></i>Security response priorities
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Handle Enter key submission
+document.getElementById('question').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('ai-form').submit();
+  }
+});
+
+// Handle suggested questions
+document.querySelectorAll('.question-suggestion').forEach(button => {
+  button.addEventListener('click', function() {
+    const question = this.getAttribute('data-question');
+    document.getElementById('question').value = question;
+    document.getElementById('ai-form').submit();
+  });
+});
+
+// Focus on question input when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('question').focus();
+});
+</script>
+{% endblock %}

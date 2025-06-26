@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero-section">
+  <h1><i class="fas fa-shield-alt me-3"></i>Harmonia Incident Response App</h1>
+  <p>
+    A comprehensive threat intelligence platform that provides real-time insights into cybersecurity threats, 
+    vulnerabilities, and attack techniques. Built with cutting-edge AI to help security teams make 
+    data-driven decisions and respond to incidents faster.
+  </p>
+</div>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="stats-card">
+      <div class="stats-number">{{ total_indicators }}</div>
+      <h5>Total Threat Indicators</h5>
+      <p>Real-time threat intelligence data</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stats-card">
+      <div class="stats-number">{{ mitre_count }}</div>
+      <h5>MITRE ATT&CK Techniques</h5>
+      <p>Adversary tactics and procedures</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stats-card">
+      <div class="stats-number">{{ cve_count }}</div>
+      <h5>Exploited Vulnerabilities</h5>
+      <p>Known exploited CVEs from CISA</p>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-6">
+    <div class="card feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-database"></i>
+      </div>
+      <h4>Data Sources</h4>
+      <p>
+        Our platform integrates real-time threat intelligence from authoritative sources:
+      </p>
+      <ul class="list-unstyled">
+        <li><i class="fas fa-check text-success me-2"></i><strong>MITRE ATT&CK:</strong> Comprehensive database of adversary tactics, techniques, and procedures</li>
+        <li><i class="fas fa-check text-success me-2"></i><strong>CISA KEV:</strong> Known Exploited Vulnerabilities catalog with active exploitation data</li>
+        <li><i class="fas fa-check text-success me-2"></i><strong>Real-time Updates:</strong> Continuously updated threat intelligence feeds</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h4>Analytics & Insights</h4>
+      <p>
+        Powerful analytics capabilities to understand and respond to threats:
+      </p>
+      <ul class="list-unstyled">
+        <li><i class="fas fa-chart-bar text-primary me-2"></i><strong>Interactive Dashboards:</strong> Visual threat intelligence analytics</li>
+        <li><i class="fas fa-search text-primary me-2"></i><strong>Advanced Search:</strong> Filter and explore threat data</li>
+        <li><i class="fas fa-robot text-primary me-2"></i><strong>AI-Powered Insights:</strong> Natural language threat analysis</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h4><i class="fas fa-rocket me-2"></i>What You Can Do</h4>
+        <div class="row">
+          <div class="col-md-4">
+            <h6><i class="fas fa-search me-2"></i>Explore Threat Data</h6>
+            <p>Browse through thousands of threat indicators, filter by type, source, and severity to find relevant intelligence for your security operations.</p>
+          </div>
+          <div class="col-md-4">
+            <h6><i class="fas fa-chart-pie me-2"></i>Analyze Trends</h6>
+            <p>Visualize threat patterns, understand attack techniques distribution, and identify emerging threats through interactive charts and analytics.</p>
+          </div>
+          <div class="col-md-4">
+            <h6><i class="fas fa-brain me-2"></i>Get AI Insights</h6>
+            <p>Ask questions about your threat data in natural language and get intelligent responses powered by advanced AI analysis.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12 text-center">
+    <a href="/data-explorer" class="btn btn-primary btn-lg me-3">
+      <i class="fas fa-search me-2"></i>Start Exploring
+    </a>
+    <a href="/dashboard" class="btn btn-outline-primary btn-lg me-3">
+      <i class="fas fa-chart-bar me-2"></i>View Analytics
+    </a>
+    <a href="/ai-insights" class="btn btn-outline-primary btn-lg">
+      <i class="fas fa-robot me-2"></i>Ask AI
+    </a>
+  </div>
+</div>
+{% endblock %} 

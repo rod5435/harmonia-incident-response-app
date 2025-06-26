@@ -1,0 +1,22 @@
+[
+    {
+        "indicator_type": "MITRE Technique",
+        "indicator_value": "T1001",
+        "name": "Data Obfuscation",
+        "description": "Technique for hiding data in transit.",
+        "source": "MITRE ATT&CK",
+        "severity_score": "",
+        "date_added": "2023-01-01",
+        "timestamp": "2023-01-01T12:00:00Z"
+    },
+    {
+        "indicator_type": "CVE Vulnerability",
+        "indicator_value": "CVE-2023-1234",
+        "name": "Sample Vulnerable Product",
+        "description": "A sample vulnerability in a product.",
+        "source": "CISA KEV Catalog",
+        "severity_score": "7.5",
+        "date_added": "2023-04-15",
+        "timestamp": "2023-04-15T08:00:00Z"
+    }
+]

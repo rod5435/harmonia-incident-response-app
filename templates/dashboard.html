@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-chart-line me-2"></i>Dashboard & Analytics</h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="stats-card">
+      <div class="stats-number">{{ stats.total_indicators }}</div>
+      <h6>Total Indicators</h6>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stats-card">
+      <div class="stats-number">{{ stats.mitre_count }}</div>
+      <h6>MITRE Techniques</h6>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stats-card">
+      <div class="stats-number">{{ stats.cve_count }}</div>
+      <h6>CVE Vulnerabilities</h6>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stats-card">
+      <div class="stats-number">{{ stats.recent_count }}</div>
+      <h6>Recent (7 days)</h6>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Indicator Types Distribution</h5>
+        <div id="type-chart"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Source Distribution</h5>
+        <div id="source-chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Recent Activity Trend</h5>
+        <div id="trend-chart"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Top MITRE Techniques</h5>
+        <div id="techniques-chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Severity Distribution -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-exclamation-triangle me-2"></i>Severity Distribution</h5>
+        <div id="severity-chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Prepare data from Flask
+const stats = {{ stats|tojson }};
+
+// 1. Indicator Types Distribution (Pie Chart)
+const typeData = [
+  {
+    values: [stats.mitre_count, stats.cve_count],
+    labels: ['MITRE Techniques', 'CVE Vulnerabilities'],
+    type: 'pie',
+    marker: {
+      colors: ['#3498db', '#e74c3c']
+    }
+  }
+];
+
+const typeLayout = {
+  title: 'Threat Intelligence Distribution',
+  height: 400
+};
+
+Plotly.newPlot('type-chart', typeData, typeLayout);
+
+// 2. Source Distribution (Bar Chart)
+const sourceData = {{ stats.source_distribution|tojson }};
+const sourceChartData = [{
+  x: sourceData.map(item => item[0]),
+  y: sourceData.map(item => item[1]),
+  type: 'bar',
+  marker: {
+    color: '#2c3e50'
+  }
+}];
+
+const sourceLayout = {
+  title: 'Data Sources',
+  xaxis: { title: 'Source' },
+  yaxis: { title: 'Count' },
+  height: 400
+};
+
+Plotly.newPlot('source-chart', sourceChartData, sourceLayout);
+
+// 3. Recent Activity Trend (Line Chart)
+const trendData = {{ stats.recent_trend|tojson }};
+const trendChartData = [{
+  x: trendData.map(item => item[0]),
+  y: trendData.map(item => item[1]),
+  type: 'scatter',
+  mode: 'lines+markers',
+  line: {
+    color: '#27ae60',
+    width: 3
+  },
+  marker: {
+    size: 8,
+    color: '#27ae60'
+  }
+}];
+
+const trendLayout = {
+  title: 'Recent Activity (Last 7 Days)',
+  xaxis: { title: 'Date' },
+  yaxis: { title: 'New Indicators' },
+  height: 400
+};
+
+Plotly.newPlot('trend-chart', trendChartData, trendLayout);
+
+// 4. Top MITRE Techniques (Horizontal Bar Chart)
+const techniquesData = {{ stats.top_techniques|tojson }};
+const techniquesChartData = [{
+  x: techniquesData.map(item => item[1]),
+  y: techniquesData.map(item => item[0]),
+  type: 'bar',
+  orientation: 'h',
+  marker: {
+    color: '#9b59b6'
+  }
+}];
+
+const techniquesLayout = {
+  title: 'Most Common MITRE Techniques',
+  xaxis: { title: 'Count' },
+  yaxis: { title: 'Technique' },
+  height: 400
+};
+
+Plotly.newPlot('techniques-chart', techniquesChartData, techniquesLayout);
+
+// 5. Severity Distribution (Donut Chart)
+const severityData = {{ stats.severity_distribution|tojson }};
+const severityChartData = [{
+  values: severityData.map(item => item[1]),
+  labels: severityData.map(item => item[0] || 'Unknown'),
+  type: 'pie',
+  hole: 0.4,
+  marker: {
+    colors: ['#e74c3c', '#f39c12', '#f1c40f', '#27ae60', '#3498db']
+  }
+}];
+
+const severityLayout = {
+  title: 'Severity Score Distribution',
+  height: 400
+};
+
+Plotly.newPlot('severity-chart', severityChartData, severityLayout);
+</script>
+{% endblock %}
