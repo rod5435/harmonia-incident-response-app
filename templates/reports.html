@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block content %}
+<h2><i class="fas fa-file-export me-2"></i>Reports & Export</h2>
+
+<div class="row">
+    <!-- Professional Reports -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Professional Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate comprehensive threat intelligence reports for executives and stakeholders.</p>
+                
+                <div class="mb-3">
+                    <label for="report-type" class="form-label">Report Type</label>
+                    <select id="report-type" class="form-select">
+                        <option value="executive">Executive Summary</option>
+                        <option value="technical">Technical Analysis</option>
+                        <option value="comprehensive" selected>Comprehensive Report</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="report-days" class="form-label">Analysis Period (days)</label>
+                    <select id="report-days" class="form-select">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="180">Last 6 months</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="#" id="export-pdf" class="btn btn-danger">
+                        <i class="fas fa-file-pdf me-2"></i>Export PDF Report
+                    </a>
+                    <a href="#" id="export-excel" class="btn btn-success">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel Report
+                    </a>
+                    <a href="#" id="export-html" class="btn btn-info">
+                        <i class="fas fa-file-code me-2"></i>Export HTML Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Export -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>Data Export
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Export raw threat intelligence data for analysis in other tools.</p>
+                
+                <div class="mb-3">
+                    <label for="data-format" class="form-label">Export Format</label>
+                    <select id="data-format" class="form-select">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="data-type" class="form-label">Data Type</label>
+                    <select id="data-type" class="form-select">
+                        <option value="all">All Indicators</option>
+                        <option value="MITRE Technique">MITRE Techniques Only</option>
+                        <option value="CVE Vulnerability">CVE Vulnerabilities Only</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="data-limit" class="form-label">Record Limit</label>
+                    <select id="data-limit" class="form-select">
+                        <option value="100">100 records</option>
+                        <option value="500">500 records</option>
+                        <option value="1000" selected>1000 records</option>
+                        <option value="5000">5000 records</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid">
+                    <a href="#" id="export-data" class="btn btn-warning">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Reports -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate quick reports for immediate use.</p>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateQuickReport('executive', 7, event)">
+                        <i class="fas fa-chart-line me-2"></i>Weekly Executive Summary
+                    </button>
+                    <button class="btn btn-outline-success" onclick="generateQuickReport('technical', 30, event)">
+                        <i class="fas fa-cogs me-2"></i>Monthly Technical Report
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="generateQuickReport('comprehensive', 90, event)">
+                        <i class="fas fa-file-alt me-2"></i>Quarterly Comprehensive Report
+                    </button>
+                </div>
+                
+                <!-- Report Display Area -->
+                <div id="quick-report-display" class="mt-4" style="display: none;">
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 id="report-title" class="mb-0"></h6>
+                        <button class="btn btn-sm btn-primary" id="download-report-btn">
+                            <i class="fas fa-download me-2"></i>Download PDF
+                        </button>
+                    </div>
+                    <div id="report-content" class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Report content will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Templates -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-copy me-2"></i>Report Templates
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Use predefined report templates for consistent reporting.</p>
+                
+                <div class="list-group list-group-flush">
+                    <button class="list-group-item list-group-item-action" onclick="useTemplate('executive')">
+                        <i class="fas fa-user-tie me-2 text-primary"></i>
+                        <strong>Executive Template</strong><br>
+                        <small class="text-muted">High-level summary for leadership</small>
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="useTemplate('technical')">
+                        <i class="fas fa-code me-2 text-success"></i>
+                        <strong>Technical Template</strong><br>
+                        <small class="text-muted">Detailed technical analysis</small>
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="useTemplate('comprehensive')">
+                        <i class="fas fa-book me-2 text-info"></i>
+                        <strong>Comprehensive Template</strong><br>
+                        <small class="text-muted">Full security report</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export History -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent Exports
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Format</th>
+                                <th>Period</th>
+                                <th>Generated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="export-history">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>No recent exports
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Professional Reports Export
+document.getElementById('export-pdf').addEventListener('click', function(e) {
+    e.preventDefault();
+    const reportType = document.getElementById('report-type').value;
+    const days = document.getElementById('report-days').value;
+    
+    const url = `/export/pdf?type=${reportType}&days=${days}`;
+    window.location.href = url;
+});
+
+document.getElementById('export-excel').addEventListener('click', function(e) {
+    e.preventDefault();
+    const days = document.getElementById('report-days').value;
+    
+    const url = `/export/excel?days=${days}`;
+    window.location.href = url;
+});
+
+document.getElementById('export-html').addEventListener('click', function(e) {
+    e.preventDefault();
+    const reportType = document.getElementById('report-type').value;
+    const days = document.getElementById('report-days').value;
+    
+    const url = `/export/html?type=${reportType}&days=${days}`;
+    window.location.href = url;
+});
+
+// Data Export
+document.getElementById('export-data').addEventListener('click', function(e) {
+    e.preventDefault();
+    const format = document.getElementById('data-format').value;
+    const type = document.getElementById('data-type').value;
+    const limit = document.getElementById('data-limit').value;
+    
+    const url = `/export/data?format=${format}&type=${type}&limit=${limit}`;
+    window.location.href = url;
+});
+
+// Quick Reports
+function generateQuickReport(type, days, event) {
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    button.disabled = true;
+    
+    // Hide any previous report
+    document.getElementById('quick-report-display').style.display = 'none';
+    
+    // Generate report using AI
+    fetch(`/api/generate-report?type=${type}&days=${days}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                alert('Error generating report: ' + data.error);
+            } else if (data.report) {
+                // Display the report
+                showQuickReport(data.report, type, days);
+            } else {
+                alert('Unexpected response format');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error generating report: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+}
+
+// Show Quick Report
+function showQuickReport(content, type, days) {
+    const displayArea = document.getElementById('quick-report-display');
+    const titleElement = document.getElementById('report-title');
+    const contentElement = document.getElementById('report-content');
+    const downloadBtn = document.getElementById('download-report-btn');
+    
+    // Set title
+    titleElement.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Report (Last ${days} days)`;
+    
+    // Format the content
+    const formattedContent = content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    contentElement.innerHTML = formattedContent;
+    
+    // Set download button
+    downloadBtn.onclick = function() {
+        const url = `/export/pdf?type=${type}&days=${days}`;
+        window.location.href = url;
+    };
+    
+    // Show the display area
+    displayArea.style.display = 'block';
+    
+    // Scroll to the report
+    displayArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Report Templates
+function useTemplate(templateType) {
+    // Set form values based on template
+    document.getElementById('report-type').value = templateType;
+    
+    // Set appropriate days based on template
+    let days = 30;
+    if (templateType === 'executive') {
+        days = 7; // Weekly for executives
+    } else if (templateType === 'technical') {
+        days = 30; // Monthly for technical
+    } else if (templateType === 'comprehensive') {
+        days = 90; // Quarterly for comprehensive
+    }
+    
+    document.getElementById('report-days').value = days;
+    
+    // Show success message
+    showAlert('Template applied successfully!', 'success');
+}
+
+// Show Alert
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.row'));
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Export History (placeholder - would be implemented with backend storage)
+function loadExportHistory() {
+    // This would load from a database table tracking exports
+    // For now, we'll show a placeholder
+    const historyTable = document.getElementById('export-history');
+    historyTable.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                <i class="fas fa-info-circle me-2"></i>Export history will be tracked here
+            </td>
+        </tr>
+    `;
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    loadExportHistory();
+});
+</script>
+{% endblock %} 

@@ -88,8 +88,22 @@ def advanced_search_indicators(
         error_out=False
     )
     
+    # Convert Indicator objects to dictionaries for JSON serialization
+    items = []
+    for indicator in pagination.items:
+        items.append({
+            'id': indicator.id,
+            'name': indicator.name,
+            'type': indicator.indicator_type,
+            'description': indicator.description,
+            'severity_score': indicator.severity_score,
+            'source': indicator.source,
+            'date_added': indicator.date_added,
+            'indicator_value': indicator.indicator_value
+        })
+    
     return {
-        'items': pagination.items,
+        'items': items,
         'total': total,
         'pages': pagination.pages,
         'current_page': page,
@@ -180,11 +194,11 @@ def get_filter_options():
     """Get available filter options for the UI"""
     # Get unique sources
     sources = db.session.query(Indicator.source).distinct().all()
-    sources = [source[0] for source in sources if source[0]]
+    sources = [source[0] for source in sources if source and source[0]]
     
     # Get unique severity scores
     severities = db.session.query(Indicator.severity_score).distinct().all()
-    severities = [sev[0] for sev in severities if sev[0]]
+    severities = [sev[0] for sev in severities if sev and sev[0]]
     
     # Get date range
     date_range = db.session.query(
@@ -196,7 +210,7 @@ def get_filter_options():
         'sources': sources,
         'severities': severities,
         'date_range': {
-            'min': date_range[0] if date_range[0] else None,
-            'max': date_range[1] if date_range[1] else None
+            'min': date_range[0] if date_range and date_range[0] else None,
+            'max': date_range[1] if date_range and date_range[1] else None
         }
     }

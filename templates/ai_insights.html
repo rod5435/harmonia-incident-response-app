@@ -1,195 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
-<h2><i class="fas fa-robot me-2"></i>AI-Powered Security Insights</h2>
+<h2><i class="fas fa-robot me-2"></i>AI Insights Chat</h2>
 
 <div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-comments me-2"></i>Ask AI Security Expert
-                </h5>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <form method="POST" id="ai-form">
+          <div class="mb-3">
+            <label for="question" class="form-label">
+              <i class="fas fa-question-circle me-2"></i>Ask a question about the incident data:
+            </label>
+            <textarea 
+              id="question" 
+              name="question" 
+              class="form-control" 
+              rows="4" 
+              required 
+              placeholder="e.g., What are the most common attack techniques? What vulnerabilities should I prioritize?"
+            >{{ question or '' }}</textarea>
+            <div class="form-text">
+              <i class="fas fa-info-circle me-1"></i>
+              Press Enter to submit, or click the button below
             </div>
-            <div class="card-body">
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="question" class="form-label">Your Security Question</label>
-                        <textarea class="form-control" id="question" name="question" rows="4" 
-                                  placeholder="Ask about threat patterns, security recommendations, attack analysis, or any security-related question...">{{ question or '' }}</textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Get AI Analysis
-                    </button>
-                </form>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane me-2"></i>Ask GPT
+          </button>
+        </form>
 
-                {% if answer %}
-                <div class="mt-4">
-                    <h6><i class="fas fa-lightbulb me-2"></i>AI Response:</h6>
-                    <div class="alert alert-info">
-                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ answer }}</pre>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
+        {% if answer %}
+        <div class="mt-4">
+          <h5><i class="fas fa-lightbulb me-2"></i>AI Response:</h5>
+          <div class="alert alert-info" style="white-space: pre-wrap; border-radius: 10px;">
+            {{ answer }}
+          </div>
         </div>
+        {% endif %}
+      </div>
     </div>
-
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-lightbulb me-2"></i>Suggested Questions
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('What are the most critical security threats in our current threat landscape?')">
-                        <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
-                        Critical threats analysis
-                    </button>
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('How can we improve our detection capabilities for MITRE ATT&CK techniques?')">
-                        <i class="fas fa-shield-alt me-2 text-primary"></i>
-                        MITRE ATT&CK detection
-                    </button>
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('What are the emerging attack patterns we should be aware of?')">
-                        <i class="fas fa-chart-line me-2 text-warning"></i>
-                        Emerging attack patterns
-                    </button>
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('What security controls should we prioritize based on our threat data?')">
-                        <i class="fas fa-cogs me-2 text-info"></i>
-                        Security controls priority
-                    </button>
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('How can we correlate different threat indicators to identify attack campaigns?')">
-                        <i class="fas fa-project-diagram me-2 text-success"></i>
-                        Threat correlation
-                    </button>
-                    <button class="list-group-item list-group-item-action" onclick="setQuestion('What are the best practices for incident response based on current threats?')">
-                        <i class="fas fa-tools me-2 text-secondary"></i>
-                        Incident response best practices
-                    </button>
-                </div>
-            </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-lightbulb me-2"></i>Suggested Questions</h5>
+        <div class="list-group list-group-flush">
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="What are the most common MITRE ATT&CK techniques in our data?">
+            <i class="fas fa-chart-bar me-2"></i>Most common attack techniques
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="Which vulnerabilities have the highest severity scores?">
+            <i class="fas fa-exclamation-triangle me-2"></i>High severity vulnerabilities
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="What are the recent trends in threat intelligence?">
+            <i class="fas fa-trending-up me-2"></i>Recent threat trends
+          </button>
+          <button class="list-group-item list-group-item-action question-suggestion" 
+                  data-question="How should I prioritize my security response based on this data?">
+            <i class="fas fa-shield-alt me-2"></i>Security response priorities
+          </button>
         </div>
-
-        <!-- Quick AI Analysis Tools -->
-        <div class="card mt-3">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>Quick AI Tools
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="/ai-analysis" class="btn btn-outline-info btn-sm">
-                        <i class="fas fa-brain me-2"></i>Advanced AI Analysis
-                    </a>
-                    <button class="btn btn-outline-success btn-sm" onclick="generateQuickReport()">
-                        <i class="fas fa-file-alt me-2"></i>Quick Threat Report
-                    </button>
-                    <button class="btn btn-outline-warning btn-sm" onclick="analyzePatterns()">
-                        <i class="fas fa-chart-line me-2"></i>Pattern Analysis
-                    </button>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
-
-<!-- Quick Analysis Results -->
-<div class="row mt-4" id="quick-results" style="display: none;">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>Quick Analysis Results
-                </h5>
-                <button class="btn btn-outline-light btn-sm float-end" onclick="hideQuickResults()">
-                    <i class="fas fa-times me-1"></i>Close
-                </button>
-            </div>
-            <div class="card-body">
-                <div id="quick-results-content">
-                    <!-- Results will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <script>
-// Set question from suggested questions
-function setQuestion(question) {
-    document.getElementById('question').value = question;
-    document.getElementById('question').focus();
-}
-
-// Enter key support
-document.getElementById('question').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && e.ctrlKey) {
-        e.preventDefault();
-        document.querySelector('form').submit();
-    }
+// Handle Enter key submission
+document.getElementById('question').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('ai-form').submit();
+  }
 });
 
-// Quick Threat Report Generation
-function generateQuickReport() {
-    const resultsDiv = document.getElementById('quick-results');
-    const contentDiv = document.getElementById('quick-results-content');
-    
-    resultsDiv.style.display = 'block';
-    contentDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Generating quick threat report...</div>';
-    
-    fetch('/api/generate-report?type=executive&days=30')
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                contentDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
-            } else {
-                contentDiv.innerHTML = `
-                    <h6><i class="fas fa-file-alt me-2"></i>Executive Threat Report (Last 30 Days)</h6>
-                    <div class="border rounded p-3 bg-light">
-                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${data.report}</pre>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            contentDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error generating report</div>';
-        });
-}
+// Handle suggested questions
+document.querySelectorAll('.question-suggestion').forEach(button => {
+  button.addEventListener('click', function() {
+    const question = this.getAttribute('data-question');
+    document.getElementById('question').value = question;
+    document.getElementById('ai-form').submit();
+  });
+});
 
-// Quick Pattern Analysis
-function analyzePatterns() {
-    const resultsDiv = document.getElementById('quick-results');
-    const contentDiv = document.getElementById('quick-results-content');
-    
-    resultsDiv.style.display = 'block';
-    contentDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing threat patterns...</div>';
-    
-    fetch('/api/threat-analysis?days=30')
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                contentDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
-            } else {
-                contentDiv.innerHTML = `
-                    <h6><i class="fas fa-chart-line me-2"></i>Threat Pattern Analysis (Last 30 Days)</h6>
-                    <div class="border rounded p-3 bg-light">
-                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${data.analysis}</pre>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            contentDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error analyzing patterns</div>';
-        });
-}
-
-// Hide quick results
-function hideQuickResults() {
-    document.getElementById('quick-results').style.display = 'none';
-}
+// Focus on question input when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('question').focus();
+});
 </script>
 {% endblock %}

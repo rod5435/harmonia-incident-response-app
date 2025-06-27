@@ -7,12 +7,12 @@ import json
 import re
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def ask_gpt(question, context=""):
     """Basic GPT-4o question answering"""
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a cybersecurity expert specializing in threat intelligence and incident response. Provide clear, actionable insights based on the data provided."},
@@ -66,7 +66,7 @@ def analyze_threat_patterns(days=30):
         Provide a comprehensive analysis with specific examples from the data.
         """
         
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a senior cybersecurity analyst with expertise in threat intelligence, incident response, and security operations. Provide detailed, actionable analysis with specific recommendations."},
@@ -86,12 +86,24 @@ def generate_threat_report(report_type="comprehensive", days=30):
     try:
         # Get data based on report type
         cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date_str = cutoff_date.strftime('%Y-%m-%d')
         
+        # Get all indicators first, then filter by date if needed
+        all_indicators = Indicator.query.all()
+        
+        # Filter indicators by date (handle string dates)
+        indicators = []
+        for ind in all_indicators:
+            try:
+                if ind.date_added and ind.date_added >= cutoff_date_str:
+                    indicators.append(ind)
+            except (ValueError, TypeError):
+                # If date parsing fails, include the indicator anyway
+                indicators.append(ind)
+        
+        # Limit indicators based on report type
         if report_type == "executive":
-            # High-level summary for executives
-            indicators = Indicator.query.filter(
-                Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d')
-            ).limit(50).all()
+            indicators = indicators[:50]  # Limit to 50 for executive summary
             
             prompt = f"""
             Create an executive summary threat intelligence report covering the last {days} days.
@@ -109,11 +121,6 @@ def generate_threat_report(report_type="comprehensive", days=30):
             """
             
         elif report_type == "technical":
-            # Detailed technical analysis
-            indicators = Indicator.query.filter(
-                Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d')
-            ).all()
-            
             prompt = f"""
             Create a detailed technical threat intelligence report covering the last {days} days.
             
@@ -131,11 +138,6 @@ def generate_threat_report(report_type="comprehensive", days=30):
             """
             
         else:  # comprehensive
-            # Full comprehensive report
-            indicators = Indicator.query.filter(
-                Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d')
-            ).all()
-            
             prompt = f"""
             Create a comprehensive threat intelligence report covering the last {days} days.
             
@@ -156,7 +158,21 @@ def generate_threat_report(report_type="comprehensive", days=30):
             Format as a comprehensive security report suitable for both technical and executive audiences.
             """
         
-        response = client.chat.completions.create(
+        # Add some sample data to the prompt for better context
+        sample_data = []
+        for ind in indicators[:10]:  # Include first 10 indicators as examples
+            sample_data.append({
+                'name': ind.name,
+                'type': ind.indicator_type,
+                'description': ind.description,
+                'severity': ind.severity_score,
+                'source': ind.source
+            })
+        
+        if sample_data:
+            prompt += f"\n\nSample Data:\n{json.dumps(sample_data, indent=2)}"
+        
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a senior cybersecurity consultant and threat intelligence analyst. Create professional, comprehensive security reports that are both technically accurate and business-relevant."},
@@ -169,6 +185,7 @@ def generate_threat_report(report_type="comprehensive", days=30):
         return response.choices[0].message.content
         
     except Exception as e:
+        print(f"Error in generate_threat_report: {str(e)}")
         return f"Error generating threat report: {str(e)}"
 
 def correlate_threats(indicator_id=None, search_term=None):
@@ -256,7 +273,7 @@ def correlate_threats(indicator_id=None, search_term=None):
         Provide detailed analysis with specific recommendations for threat response.
         """
         
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a threat intelligence analyst specializing in threat correlation and pattern recognition. Provide detailed analysis of threat relationships and actionable recommendations."},
@@ -345,7 +362,7 @@ def analyze_attack_chain(technique_name=None):
         Provide detailed analysis with specific defensive and detection recommendations.
         """
         
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a cybersecurity expert specializing in MITRE ATT&CK framework, attack chain analysis, and defensive strategies. Provide detailed analysis of attack techniques and comprehensive defensive recommendations."},
@@ -394,7 +411,7 @@ def get_ai_insights_summary():
         Provide a concise summary highlighting the most important findings and recommendations.
         """
         
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a cybersecurity analyst reviewing recent AI-generated security insights. Provide a clear, actionable summary of key findings and recommendations."},
