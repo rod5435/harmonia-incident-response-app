@@ -1,7 +1,8 @@
-from models import Indicator
-from models import db
+from models import Indicator, db, Export
 from sqlalchemy import func, or_, and_
 from datetime import datetime, timedelta
+import json
+import os
 
 def get_indicator_counts():
     return db.session.query(
@@ -214,3 +215,62 @@ def get_filter_options():
             'max': date_range[1] if date_range and date_range[1] else None
         }
     }
+
+def format_indicator_for_json(indicator):
+    """Format an Indicator object for JSON serialization"""
+    if not indicator:
+        return None
+    
+    return {
+        'id': indicator.id,
+        'indicator_type': indicator.indicator_type,
+        'indicator_value': indicator.indicator_value,
+        'name': indicator.name,
+        'description': indicator.description,
+        'source': indicator.source,
+        'severity_score': indicator.severity_score,
+        'date_added': indicator.date_added,
+        'timestamp': indicator.timestamp
+    }
+
+def record_export(export_type, report_type, format_type, days, filename, file_size=None, parameters=None):
+    """Record an export in the database"""
+    try:
+        export = Export(
+            export_type=export_type,
+            report_type=report_type,
+            format_type=format_type,
+            days=days,
+            filename=filename,
+            file_size=file_size or 0,
+            parameters=json.dumps(parameters) if parameters else None
+        )
+        db.session.add(export)
+        db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Error recording export: {e}")
+        db.session.rollback()
+        return False
+
+def get_export_history(limit=20):
+    """Get recent export history"""
+    try:
+        exports = Export.query.order_by(Export.generated_at.desc()).limit(limit).all()
+        return [
+            {
+                'id': export.id,
+                'export_type': export.export_type,
+                'report_type': export.report_type,
+                'format_type': export.format_type,
+                'days': export.days,
+                'filename': export.filename,
+                'file_size': export.file_size,
+                'generated_at': export.generated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'parameters': json.loads(export.parameters) if export.parameters else {}
+            }
+            for export in exports
+        ]
+    except Exception as e:
+        print(f"Error getting export history: {e}")
+        return []

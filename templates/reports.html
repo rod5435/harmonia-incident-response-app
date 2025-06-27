@@ -214,6 +214,11 @@ document.getElementById('export-pdf').addEventListener('click', function(e) {
     
     const url = `/export/pdf?type=${reportType}&days=${days}`;
     window.location.href = url;
+    
+    // Refresh export history after a short delay
+    setTimeout(() => {
+        loadExportHistory();
+    }, 1000);
 });
 
 document.getElementById('export-excel').addEventListener('click', function(e) {
@@ -222,6 +227,11 @@ document.getElementById('export-excel').addEventListener('click', function(e) {
     
     const url = `/export/excel?days=${days}`;
     window.location.href = url;
+    
+    // Refresh export history after a short delay
+    setTimeout(() => {
+        loadExportHistory();
+    }, 1000);
 });
 
 document.getElementById('export-html').addEventListener('click', function(e) {
@@ -231,6 +241,11 @@ document.getElementById('export-html').addEventListener('click', function(e) {
     
     const url = `/export/html?type=${reportType}&days=${days}`;
     window.location.href = url;
+    
+    // Refresh export history after a short delay
+    setTimeout(() => {
+        loadExportHistory();
+    }, 1000);
 });
 
 // Data Export
@@ -242,6 +257,11 @@ document.getElementById('export-data').addEventListener('click', function(e) {
     
     const url = `/export/data?format=${format}&type=${type}&limit=${limit}`;
     window.location.href = url;
+    
+    // Refresh export history after a short delay
+    setTimeout(() => {
+        loadExportHistory();
+    }, 1000);
 });
 
 // Quick Reports
@@ -301,6 +321,11 @@ function showQuickReport(content, type, days) {
     downloadBtn.onclick = function() {
         const url = `/export/pdf?type=${type}&days=${days}`;
         window.location.href = url;
+        
+        // Refresh export history after a short delay
+        setTimeout(() => {
+            loadExportHistory();
+        }, 1000);
     };
     
     // Show the display area
@@ -350,18 +375,86 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
-// Export History (placeholder - would be implemented with backend storage)
+// Export History
 function loadExportHistory() {
-    // This would load from a database table tracking exports
-    // For now, we'll show a placeholder
-    const historyTable = document.getElementById('export-history');
-    historyTable.innerHTML = `
-        <tr>
-            <td colspan="5" class="text-center text-muted">
-                <i class="fas fa-info-circle me-2"></i>Export history will be tracked here
-            </td>
-        </tr>
-    `;
+    // Fetch export history from the API
+    fetch('/api/export-history?limit=20')
+        .then(response => response.json())
+        .then(data => {
+            const historyTable = document.getElementById('export-history');
+            
+            if (data.exports && data.exports.length > 0) {
+                let tableHTML = '';
+                data.exports.forEach(export_item => {
+                    const fileSizeKB = Math.round(export_item.file_size / 1024);
+                    const formatIcon = getFormatIcon(export_item.format_type);
+                    const downloadUrl = `/static/reports/${export_item.filename}`;
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>
+                                <i class="fas fa-file-alt me-2"></i>
+                                ${export_item.report_type.charAt(0).toUpperCase() + export_item.report_type.slice(1)}
+                            </td>
+                            <td>
+                                <i class="${formatIcon} me-2"></i>
+                                ${export_item.format_type.toUpperCase()}
+                            </td>
+                            <td>${export_item.days > 0 ? export_item.days + ' days' : 'All data'}</td>
+                            <td>${export_item.generated_at}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="${downloadUrl}" class="btn btn-outline-primary btn-sm" download>
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                    <button class="btn btn-outline-info btn-sm" onclick="showExportDetails('${export_item.id}')">
+                                        <i class="fas fa-info-circle me-1"></i>Details
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                historyTable.innerHTML = tableHTML;
+            } else {
+                historyTable.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No recent exports
+                        </td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading export history:', error);
+            const historyTable = document.getElementById('export-history');
+            historyTable.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error loading export history
+                    </td>
+                </tr>
+            `;
+        });
+}
+
+// Get format icon
+function getFormatIcon(format) {
+    switch (format.toLowerCase()) {
+        case 'pdf': return 'fas fa-file-pdf';
+        case 'xlsx': return 'fas fa-file-excel';
+        case 'html': return 'fas fa-file-code';
+        case 'json': return 'fas fa-file-code';
+        case 'csv': return 'fas fa-file-csv';
+        default: return 'fas fa-file';
+    }
+}
+
+// Show export details
+function showExportDetails(exportId) {
+    // This could show a modal with detailed information about the export
+    alert('Export details feature coming soon!');
 }
 
 // Initialize page

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db, Indicator, UserQuery
-from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options
+from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history
 from openai_integration import ask_gpt, analyze_threat_patterns, generate_threat_report, correlate_threats, analyze_attack_chain, get_ai_insights_summary
 from reporting import ReportGenerator
 from datetime import datetime
@@ -270,6 +270,16 @@ def create_app():
             print(f"AI insights summary error: {e}")
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/export-history')
+    def api_export_history():
+        """Get export history"""
+        try:
+            limit = request.args.get('limit', default=20, type=int)
+            exports = get_export_history(limit)
+            return jsonify({'exports': exports})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     # Export and Reporting Routes
     @app.route('/reports')
     def reports():
@@ -290,6 +300,18 @@ def create_app():
                 return jsonify({'error': error or 'Failed to generate PDF'}), 500
             
             filepath = os.path.join(generator.reports_dir, filename)
+            
+            # Record the export
+            file_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
+            record_export(
+                export_type='pdf',
+                report_type=report_type,
+                format_type='pdf',
+                days=days,
+                filename=filename,
+                file_size=file_size,
+                parameters={'type': report_type, 'days': days}
+            )
             
             return send_file(
                 filepath,
@@ -316,6 +338,18 @@ def create_app():
             
             filepath = os.path.join(generator.reports_dir, filename)
             
+            # Record the export
+            file_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
+            record_export(
+                export_type='excel',
+                report_type=report_type,
+                format_type='xlsx',
+                days=days,
+                filename=filename,
+                file_size=file_size,
+                parameters={'type': report_type, 'days': days}
+            )
+            
             return send_file(
                 filepath,
                 as_attachment=True,
@@ -340,6 +374,18 @@ def create_app():
                 return jsonify({'error': error or 'Failed to generate HTML file'}), 500
             
             filepath = os.path.join(generator.reports_dir, filename)
+            
+            # Record the export
+            file_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
+            record_export(
+                export_type='html',
+                report_type=report_type,
+                format_type='html',
+                days=days,
+                filename=filename,
+                file_size=file_size,
+                parameters={'type': report_type, 'days': days}
+            )
             
             return send_file(
                 filepath,
@@ -389,8 +435,20 @@ def create_app():
                 output.seek(0)
                 filename = f"harmonia_indicators_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                 
+                # Record the export
+                data_content = output.getvalue().encode('utf-8')
+                record_export(
+                    export_type='data',
+                    report_type='data',
+                    format_type='csv',
+                    days=0,
+                    filename=filename,
+                    file_size=len(data_content),
+                    parameters={'format': 'csv', 'type': indicator_type, 'limit': limit}
+                )
+                
                 return send_file(
-                    io.BytesIO(output.getvalue().encode('utf-8')),
+                    io.BytesIO(data_content),
                     as_attachment=True,
                     download_name=filename,
                     mimetype='text/csv'
@@ -411,8 +469,20 @@ def create_app():
                 
                 filename = f"harmonia_indicators_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                 
+                # Record the export
+                data_content = json.dumps(data, indent=2, default=str).encode('utf-8')
+                record_export(
+                    export_type='data',
+                    report_type='data',
+                    format_type='json',
+                    days=0,
+                    filename=filename,
+                    file_size=len(data_content),
+                    parameters={'format': 'json', 'type': indicator_type, 'limit': limit}
+                )
+                
                 return send_file(
-                    io.BytesIO(json.dumps(data, indent=2, default=str).encode('utf-8')),
+                    io.BytesIO(data_content),
                     as_attachment=True,
                     download_name=filename,
                     mimetype='application/json'
