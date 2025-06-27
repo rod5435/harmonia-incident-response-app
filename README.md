@@ -11,10 +11,14 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - **Enhanced ETL Pipeline**: Robust data processing with ZIP handling and error recovery
 
 ### 📈 **Advanced Analytics Dashboard**
-- **Interactive Charts**: 5 different chart types including pie charts, bar charts, and trend analysis
+- **Interactive Charts**: 7 different chart types including pie charts, bar charts, trend analysis, and geographic visualization
 - **Real-time Statistics**: Live counts and metrics for 82,000+ threat indicators
 - **Severity Distribution**: Visual analysis of threat severity levels across all sources
 - **Source Analytics**: Breakdown of data sources and their contributions
+- **Dynamic Filtering**: Real-time filtering by time range, severity, and data sources
+- **Drill-down Capabilities**: Click charts to explore specific threat categories
+- **Temporal Analysis**: Time-based threat trends with peak period detection
+- **Geographic Intelligence**: Country-based threat mapping with regional hotspots
 
 ### 🔍 **Data Explorer**
 - **Advanced Filtering**: Filter by indicator type, source, severity, and date
@@ -23,13 +27,30 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - **Quick Statistics**: Live counts and metrics display
 - **Multi-source Support**: Browse MITRE, CISA, and URLhaus data
 
+### ⏰ **Temporal Analysis & Threat Trends**
+- **Multi-line Time Series**: Track threat trends over time with source-specific lines
+- **Peak Period Detection**: Identify high-activity threat periods automatically
+- **Weekly Pattern Analysis**: Discover day-of-week threat patterns
+- **Trend Direction Analysis**: Determine if threats are increasing, decreasing, or stable
+- **Average Daily Threats**: Real-time calculation of threat activity levels
+- **Filter-Responsive**: All temporal analysis responds to dashboard filters
+
+### 🌍 **Geographic Threat Intelligence**
+- **Country-based Threat Mapping**: Visualize threat distribution by geographic region
+- **Color-coded Threat Levels**: Red (high), orange (medium), yellow (low), green (minimal)
+- **Regional Hotspot Identification**: Automatic detection of high-threat regions
+- **Threat Distribution Analysis**: Breakdown of countries by threat severity
+- **URL-based Geographic Detection**: Extract country information from malicious URLs
+- **Filter-Integrated**: Geographic data updates based on time range, severity, and sources
+
 ### 🤖 **AI-Powered Insights**
 - **Natural Language Queries**: Ask questions about your threat data in plain English
 - **GPT-4o Integration**: Powered by the latest OpenAI model
 - **Threat Pattern Analysis**: AI-driven analysis of attack patterns and correlations
 - **Automated Reports**: AI-generated threat intelligence reports
 - **Attack Chain Analysis**: Intelligent mapping of attack sequences
-- **Suggested Questions**: Quick access to common threat intelligence queries
+- **10 Suggested Questions**: Quick access to comprehensive threat intelligence queries
+- **Multi-source Analysis**: AI insights across MITRE, CISA, and URLhaus data
 
 ### 📋 **Professional Reporting & Export**
 - **PDF Reports**: Comprehensive, executive, and technical report formats
@@ -52,10 +73,11 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - **Backend**: Flask (Python) with SQLAlchemy ORM
 - **Database**: SQLite with comprehensive data models
 - **Frontend**: Bootstrap 5 + Custom CSS + Plotly.js
-- **Charts**: Interactive visualizations with real-time data
+- **Charts**: Interactive visualizations with real-time data and filtering
 - **AI**: OpenAI GPT-4o for intelligent insights and report generation
 - **Data Sources**: MITRE ATT&CK GitHub JSON, CISA KEV Catalog, Abuse.ch URLhaus
 - **Export**: PDF (reportlab), Excel (openpyxl), HTML templates
+- **Analytics**: Advanced temporal and geographic analysis with filter integration
 
 ## 📋 Prerequisites
 
@@ -130,6 +152,10 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - **Recent Activity Trend**: Line chart of new indicators over time
 - **Top MITRE Techniques**: Horizontal bar chart of most common techniques
 - **Severity Distribution**: Donut chart of threat severity levels
+- **Temporal Analysis**: Multi-line time series showing threat trends over time
+- **Geographic Intelligence**: Country-based threat distribution with color-coded levels
+- **Dynamic Filtering**: Real-time filtering by time range, severity, and data sources
+- **Interactive Insights**: Peak period detection, weekly patterns, and regional hotspots
 
 ### **AI Insights**
 - Ask questions about your threat data in natural language
@@ -260,6 +286,10 @@ For support and questions:
 - [x] Export tracking and history
 - [x] Comprehensive test suite
 - [x] Enhanced ETL pipeline with error handling
+- [x] Temporal analysis with threat trends and peak detection
+- [x] Geographic threat intelligence with country mapping
+- [x] Dynamic filtering system with real-time chart updates
+- [x] Interactive dashboard with drill-down capabilities
 
 ### 🔮 **Future Enhancements**
 - [ ] Real-time data updates with webhooks
@@ -311,3 +341,32 @@ For support and questions:
 - **Export History Panel**: Real-time tracking of all generated reports
 - **Auto-refresh Functionality**: Seamless user experience with automatic updates
 - **Multi-source Data Explorer**: Unified interface for all threat intelligence data
+
+
+Dashboard Enhancement Proposals
+1. Multi-Source Data Visualization
+3-Source Pie Chart: MITRE, CISA, URLhaus distribution
+Source Comparison Bar Chart: Indicators per source with severity breakdown
+Real-time Source Stats: Live counters for each data source
+2. Enhanced Interactivity
+Clickable Charts: Drill-down into specific sources/types
+Dynamic Filtering: Filter charts by date range, severity, source
+Hover Details: Rich tooltips with detailed information
+Animated Transitions: Smooth chart updates and transitions
+3. New Analytics Sections
+Threat Type Analysis:
+MITRE Techniques by tactic
+CISA Vulnerabilities by vendor/product
+URLhaus URLs by threat type (malware, phishing, etc.)
+Severity Distribution: Cross-source severity analysis
+Temporal Analysis: New indicators over time by source
+Geographic Analysis: URLhaus data by country/region
+4. Interactive Features
+Source Toggle: Show/hide specific data sources
+Time Range Selector: Last 7 days, 30 days, 90 days, all time
+Severity Filter: Filter by severity levels
+Search Integration: Search results reflected in charts
+5. Real-time Updates
+Live Data Refresh: Auto-update charts every 30 seconds
+New Indicator Alerts: Highlight recent additions
+Trend Indicators: Show increasing/decreasing trends
