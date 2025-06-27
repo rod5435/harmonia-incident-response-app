@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db, Indicator, UserQuery
-from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history
+from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history, get_filtered_dashboard_stats
 from openai_integration import ask_gpt, analyze_threat_patterns, generate_threat_report, correlate_threats, analyze_attack_chain, get_ai_insights_summary
 from reporting import ReportGenerator
 from datetime import datetime
@@ -41,6 +41,10 @@ def create_app():
     def data_explorer():
         """Data Explorer page"""
         try:
+            # Get URL parameters for drill-down functionality
+            initial_type = request.args.get('type', '')
+            initial_source = request.args.get('source', '')
+            
             # Get indicator types for the filter dropdown
             indicator_types = [t[0] for t in get_indicator_counts()]
             
@@ -49,12 +53,16 @@ def create_app():
             
             return render_template('data_explorer.html', 
                                  indicator_types=indicator_types,
-                                 filter_options=filter_options)
+                                 filter_options=filter_options,
+                                 initial_type=initial_type,
+                                 initial_source=initial_source)
         except Exception as e:
             print(f"Data explorer error: {e}")
             return render_template('data_explorer.html', 
                                  indicator_types=[],
-                                 filter_options={'sources': [], 'severities': [], 'date_range': {'min': None, 'max': None}})
+                                 filter_options={'sources': [], 'severities': [], 'date_range': {'min': None, 'max': None}},
+                                 initial_type='',
+                                 initial_source='')
 
     @app.route('/api/indicators')
     def api_indicators():
@@ -278,6 +286,25 @@ def create_app():
             exports = get_export_history(limit)
             return jsonify({'exports': exports})
         except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/dashboard-stats')
+    def api_dashboard_stats():
+        """Get filtered dashboard statistics"""
+        try:
+            # Get filter parameters
+            time_range_param = request.args.get('time_range', '7')
+            time_range = int(time_range_param) if time_range_param != 'all' else 'all'
+            severity_filter = request.args.get('severity', 'all')
+            sources = request.args.getlist('sources')  # List of selected sources
+            
+            print(f"Dashboard stats API called with: time_range={time_range}, severity={severity_filter}, sources={sources}")
+            
+            # Get filtered data
+            stats = get_filtered_dashboard_stats(time_range, severity_filter, sources)
+            return jsonify(stats)
+        except Exception as e:
+            print(f"Dashboard stats API error: {e}")
             return jsonify({'error': str(e)}), 500
 
     # Export and Reporting Routes

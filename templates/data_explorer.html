@@ -127,6 +127,7 @@
           <span class="badge bg-primary fs-6" id="total-count">0</span>
           <span class="badge bg-success fs-6" id="mitre-count">0</span>
           <span class="badge bg-warning fs-6" id="cve-count">0</span>
+          <span class="badge bg-info fs-6" id="urlhaus-count">0</span>
         </div>
       </div>
       <div class="col-md-6 text-end">
@@ -188,9 +189,48 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('date-from').value = thirtyDaysAgo.toISOString().split('T')[0];
     document.getElementById('date-to').value = today.toISOString().split('T')[0];
     
+    // Handle drill-down from dashboard
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialType = urlParams.get('type');
+    const initialSource = urlParams.get('source');
+    
+    if (initialType) {
+        document.getElementById('indicator-type').value = initialType;
+        // Show a notification about the drill-down
+        showDrillDownNotification(initialType);
+    }
+    
+    if (initialSource) {
+        document.getElementById('source-filter').value = initialSource;
+        if (!initialType) {
+            showDrillDownNotification(initialSource, 'source');
+        }
+    }
+    
     // Load initial data
     performSearch();
 });
+
+function showDrillDownNotification(filterValue, filterType = 'type') {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-info alert-dismissible fade show';
+    notification.innerHTML = `
+        <i class="fas fa-filter me-2"></i>
+        <strong>Drill-down Active:</strong> Showing results filtered by ${filterType === 'source' ? 'source' : 'type'} "${filterValue}"
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the card body
+    const cardBody = document.querySelector('.card-body');
+    cardBody.insertBefore(notification, cardBody.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
 
 // Handle form submission
 document.getElementById('advanced-search-form').addEventListener('submit', function(e) {
@@ -308,10 +348,12 @@ function displayResults(data) {
     const totalCount = data.total;
     const mitreCount = data.items.filter(item => item.type === 'MITRE Technique').length;
     const cveCount = data.items.filter(item => item.type === 'CVE Vulnerability').length;
+    const urlhausCount = data.items.filter(item => item.type === 'Malicious URL').length;
     
     document.getElementById('total-count').textContent = totalCount;
     document.getElementById('mitre-count').textContent = mitreCount;
     document.getElementById('cve-count').textContent = cveCount;
+    document.getElementById('urlhaus-count').textContent = urlhausCount;
     
     // Update results info
     const start = ((data.current_page - 1) * data.per_page) + 1;
@@ -339,11 +381,14 @@ function displayResults(data) {
         const severityClass = item.severity_score >= 8 ? 'text-danger' : 
                              item.severity_score >= 5 ? 'text-warning' : 'text-success';
         
+        const typeBadgeClass = item.type === 'MITRE Technique' ? 'bg-primary' : 
+                              item.type === 'CVE Vulnerability' ? 'bg-warning' : 'bg-info';
+        
         const row = `
             <tr>
                 <td><span class="badge bg-secondary">${item.id}</span></td>
                 <td>
-                    <span class="badge ${item.type === 'MITRE Technique' ? 'bg-primary' : 'bg-warning'}">
+                    <span class="badge ${typeBadgeClass}">
                         ${item.type}
                     </span>
                 </td>

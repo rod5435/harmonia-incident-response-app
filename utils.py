@@ -169,10 +169,11 @@ def get_top_techniques(limit=10):
     return [[str(name) if name else 'Unknown', count] for name, count in results]
 
 def get_dashboard_stats():
-    """Get comprehensive dashboard statistics"""
+    """Get comprehensive dashboard statistics for all 3 data sources"""
     total_indicators = Indicator.query.count()
     mitre_count = Indicator.query.filter_by(indicator_type='MITRE Technique').count()
     cve_count = Indicator.query.filter_by(indicator_type='CVE Vulnerability').count()
+    urlhaus_count = Indicator.query.filter_by(indicator_type='Malicious URL').count()
     
     # Get recent activity (last 7 days)
     week_ago = datetime.now() - timedelta(days=7)
@@ -184,11 +185,17 @@ def get_dashboard_stats():
         'total_indicators': int(total_indicators),
         'mitre_count': int(mitre_count),
         'cve_count': int(cve_count),
+        'urlhaus_count': int(urlhaus_count),
         'recent_count': int(recent_count),
         'severity_distribution': get_severity_distribution(),
         'source_distribution': get_source_distribution(),
         'recent_trend': get_recent_indicators(7),
-        'top_techniques': get_top_techniques(5)
+        'top_techniques': get_top_techniques(5),
+        'source_breakdown': {
+            'MITRE ATT&CK': mitre_count,
+            'CISA KEV': cve_count,
+            'Abuse.ch URLhaus': urlhaus_count
+        }
     }
 
 def get_filter_options():
@@ -274,3 +281,247 @@ def get_export_history(limit=20):
     except Exception as e:
         print(f"Error getting export history: {e}")
         return []
+
+def get_filtered_dashboard_stats(time_range=7, severity_filter='all', sources=None):
+    """Get filtered dashboard statistics based on time range, severity, and sources"""
+    if sources is None:
+        sources = ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus']
+    
+    print(f"get_filtered_dashboard_stats called with: time_range={time_range}, severity={severity_filter}, sources={sources}")
+    
+    # Build base query
+    query = Indicator.query
+    
+    # Apply time filter
+    if time_range != 'all':
+        try:
+            days = int(time_range)
+            cutoff_date = datetime.now() - timedelta(days=days)
+            query = query.filter(Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d'))
+        except (ValueError, TypeError):
+            # If time_range is not a valid number, skip time filtering
+            pass
+    
+    # Apply severity filter
+    if severity_filter != 'all':
+        if severity_filter == 'high':
+            query = query.filter(Indicator.severity_score >= 8)
+        elif severity_filter == 'medium':
+            query = query.filter(Indicator.severity_score >= 4, Indicator.severity_score < 8)
+        elif severity_filter == 'low':
+            query = query.filter(Indicator.severity_score < 4)
+    
+    # Apply source filters
+    source_filters = []
+    if 'MITRE ATT&CK' in sources:
+        source_filters.append(Indicator.indicator_type == 'MITRE Technique')
+    if 'CISA KEV' in sources:
+        source_filters.append(Indicator.indicator_type == 'CVE Vulnerability')
+    if 'Abuse.ch URLhaus' in sources:
+        source_filters.append(Indicator.indicator_type == 'Malicious URL')
+    
+    if source_filters:
+        from sqlalchemy import or_
+        query = query.filter(or_(*source_filters))
+    
+    # Get filtered counts
+    total_indicators = query.count()
+    mitre_count = query.filter_by(indicator_type='MITRE Technique').count()
+    cve_count = query.filter_by(indicator_type='CVE Vulnerability').count()
+    urlhaus_count = query.filter_by(indicator_type='Malicious URL').count()
+    
+    # Get recent activity for the filtered data
+    recent_trend = get_filtered_recent_indicators(time_range, severity_filter, sources)
+    
+    # Get severity distribution for filtered data
+    severity_distribution = get_filtered_severity_distribution(time_range, severity_filter, sources)
+    
+    # Get top techniques for filtered data
+    top_techniques = get_filtered_top_techniques(time_range, severity_filter, sources)
+    
+    return {
+        'total_indicators': int(total_indicators),
+        'mitre_count': int(mitre_count),
+        'cve_count': int(cve_count),
+        'urlhaus_count': int(urlhaus_count),
+        'recent_count': int(total_indicators),  # For filtered data, this is the same as total
+        'severity_distribution': severity_distribution,
+        'source_distribution': get_filtered_source_distribution(time_range, severity_filter, sources),
+        'recent_trend': recent_trend,
+        'top_techniques': top_techniques,
+        'source_breakdown': {
+            'MITRE ATT&CK': mitre_count,
+            'CISA KEV': cve_count,
+            'Abuse.ch URLhaus': urlhaus_count
+        }
+    }
+
+def get_filtered_recent_indicators(days=7, severity_filter='all', sources=None):
+    """Get recent indicators with filters applied"""
+    if sources is None:
+        sources = ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus']
+    
+    query = Indicator.query
+    
+    # Apply time filter
+    if days != 'all':
+        try:
+            days_int = int(days)
+            cutoff_date = datetime.now() - timedelta(days=days_int)
+            query = query.filter(Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d'))
+        except (ValueError, TypeError):
+            # If days is not a valid number, skip time filtering
+            pass
+    
+    # Apply severity filter
+    if severity_filter != 'all':
+        if severity_filter == 'high':
+            query = query.filter(Indicator.severity_score >= 8)
+        elif severity_filter == 'medium':
+            query = query.filter(Indicator.severity_score >= 4, Indicator.severity_score < 8)
+        elif severity_filter == 'low':
+            query = query.filter(Indicator.severity_score < 4)
+    
+    # Apply source filters
+    source_filters = []
+    if 'MITRE ATT&CK' in sources:
+        source_filters.append(Indicator.indicator_type == 'MITRE Technique')
+    if 'CISA KEV' in sources:
+        source_filters.append(Indicator.indicator_type == 'CVE Vulnerability')
+    if 'Abuse.ch URLhaus' in sources:
+        source_filters.append(Indicator.indicator_type == 'Malicious URL')
+    
+    if source_filters:
+        from sqlalchemy import or_
+        query = query.filter(or_(*source_filters))
+    
+    results = query.with_entities(
+        func.date(Indicator.date_added).label('date'),
+        func.count(Indicator.id)
+    ).group_by(
+        func.date(Indicator.date_added)
+    ).order_by(
+        func.date(Indicator.date_added)
+    ).all()
+    
+    return [[str(date) if date else 'Unknown', count] for date, count in results]
+
+def get_filtered_severity_distribution(days=7, severity_filter='all', sources=None):
+    """Get severity distribution with filters applied"""
+    if sources is None:
+        sources = ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus']
+    
+    query = Indicator.query
+    
+    # Apply time filter
+    if days != 'all':
+        cutoff_date = datetime.now() - timedelta(days=days)
+        query = query.filter(Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d'))
+    
+    # Apply source filters
+    source_filters = []
+    if 'MITRE ATT&CK' in sources:
+        source_filters.append(Indicator.indicator_type == 'MITRE Technique')
+    if 'CISA KEV' in sources:
+        source_filters.append(Indicator.indicator_type == 'CVE Vulnerability')
+    if 'Abuse.ch URLhaus' in sources:
+        source_filters.append(Indicator.indicator_type == 'Malicious URL')
+    
+    if source_filters:
+        from sqlalchemy import or_
+        query = query.filter(or_(*source_filters))
+    
+    results = query.with_entities(
+        Indicator.severity_score,
+        func.count(Indicator.id)
+    ).group_by(Indicator.severity_score).all()
+    
+    return [[str(score) if score else 'Unknown', count] for score, count in results]
+
+def get_filtered_source_distribution(days=7, severity_filter='all', sources=None):
+    """Get source distribution with filters applied"""
+    if sources is None:
+        sources = ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus']
+    
+    query = Indicator.query
+    
+    # Apply time filter
+    if days != 'all':
+        cutoff_date = datetime.now() - timedelta(days=days)
+        query = query.filter(Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d'))
+    
+    # Apply severity filter
+    if severity_filter != 'all':
+        if severity_filter == 'high':
+            query = query.filter(Indicator.severity_score >= 8)
+        elif severity_filter == 'medium':
+            query = query.filter(Indicator.severity_score >= 4, Indicator.severity_score < 8)
+        elif severity_filter == 'low':
+            query = query.filter(Indicator.severity_score < 4)
+    
+    # Apply source filters
+    source_filters = []
+    if 'MITRE ATT&CK' in sources:
+        source_filters.append(Indicator.indicator_type == 'MITRE Technique')
+    if 'CISA KEV' in sources:
+        source_filters.append(Indicator.indicator_type == 'CVE Vulnerability')
+    if 'Abuse.ch URLhaus' in sources:
+        source_filters.append(Indicator.indicator_type == 'Malicious URL')
+    
+    if source_filters:
+        from sqlalchemy import or_
+        query = query.filter(or_(*source_filters))
+    
+    results = query.with_entities(
+        Indicator.source,
+        func.count(Indicator.id)
+    ).group_by(Indicator.source).all()
+    
+    return [[str(source) if source else 'Unknown', count] for source, count in results]
+
+def get_filtered_top_techniques(days=7, severity_filter='all', sources=None, limit=5):
+    """Get top techniques with filters applied"""
+    if sources is None:
+        sources = ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus']
+    
+    query = Indicator.query
+    
+    # Apply time filter
+    if days != 'all':
+        cutoff_date = datetime.now() - timedelta(days=days)
+        query = query.filter(Indicator.date_added >= cutoff_date.strftime('%Y-%m-%d'))
+    
+    # Apply severity filter
+    if severity_filter != 'all':
+        if severity_filter == 'high':
+            query = query.filter(Indicator.severity_score >= 8)
+        elif severity_filter == 'medium':
+            query = query.filter(Indicator.severity_score >= 4, Indicator.severity_score < 8)
+        elif severity_filter == 'low':
+            query = query.filter(Indicator.severity_score < 4)
+    
+    # Apply source filters
+    source_filters = []
+    if 'MITRE ATT&CK' in sources:
+        source_filters.append(Indicator.indicator_type == 'MITRE Technique')
+    if 'CISA KEV' in sources:
+        source_filters.append(Indicator.indicator_type == 'CVE Vulnerability')
+    if 'Abuse.ch URLhaus' in sources:
+        source_filters.append(Indicator.indicator_type == 'Malicious URL')
+    
+    if source_filters:
+        from sqlalchemy import or_
+        query = query.filter(or_(*source_filters))
+    
+    results = query.with_entities(
+        Indicator.name,
+        func.count(Indicator.id)
+    ).filter(
+        Indicator.indicator_type == 'MITRE Technique'
+    ).group_by(
+        Indicator.name
+    ).order_by(
+        func.count(Indicator.id).desc()
+    ).limit(limit).all()
+    
+    return [[str(name) if name else 'Unknown', count] for name, count in results]

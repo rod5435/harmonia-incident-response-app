@@ -2,30 +2,105 @@
 {% block content %}
 <h2><i class="fas fa-chart-line me-2"></i>Dashboard & Analytics</h2>
 
+<!-- Filter Controls -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-filter me-2"></i>Dynamic Filters</h5>
+        <div class="row">
+          <div class="col-md-3">
+            <label class="form-label">Data Sources</label>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="filter-mitre" checked>
+              <label class="form-check-label" for="filter-mitre">
+                <span class="badge bg-primary">MITRE ATT&CK</span>
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="filter-cisa" checked>
+              <label class="form-check-label" for="filter-cisa">
+                <span class="badge bg-danger">CISA KEV</span>
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="filter-urlhaus" checked>
+              <label class="form-check-label" for="filter-urlhaus">
+                <span class="badge bg-warning">URLhaus</span>
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Time Range</label>
+            <select class="form-select" id="time-range">
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="all">All Time</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Severity Filter</label>
+            <select class="form-select" id="severity-filter">
+              <option value="all">All Severities</option>
+              <option value="high">High (8-10)</option>
+              <option value="medium">Medium (4-7)</option>
+              <option value="low">Low (1-3)</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Actions</label>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary btn-sm" id="apply-filters">
+                <i class="fas fa-sync-alt me-1"></i>Apply Filters
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" id="reset-filters">
+                <i class="fas fa-undo me-1"></i>Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Stats Cards -->
 <div class="row mb-4">
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="stats-card">
       <div class="stats-number">{{ stats.total_indicators }}</div>
       <h6>Total Indicators</h6>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="stats-card">
       <div class="stats-number">{{ stats.mitre_count }}</div>
       <h6>MITRE Techniques</h6>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="stats-card">
       <div class="stats-number">{{ stats.cve_count }}</div>
-      <h6>CVE Vulnerabilities</h6>
+      <h6>CISA Vulnerabilities</h6>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
+    <div class="stats-card">
+      <div class="stats-number">{{ stats.urlhaus_count }}</div>
+      <h6>Malicious URLs</h6>
+    </div>
+  </div>
+  <div class="col-md-2">
     <div class="stats-card">
       <div class="stats-number">{{ stats.recent_count }}</div>
       <h6>Recent (7 days)</h6>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="stats-card">
+      <div class="stats-number">{{ "%.1f"|format(stats.total_indicators / 1000) }}K</div>
+      <h6>Total (K)</h6>
     </div>
   </div>
 </div>
@@ -35,7 +110,7 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Indicator Types Distribution</h5>
+        <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Threat Intelligence Distribution</h5>
         <div id="type-chart"></div>
       </div>
     </div>
@@ -43,7 +118,7 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Source Distribution</h5>
+        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Data Sources Overview</h5>
         <div id="source-chart"></div>
       </div>
     </div>
@@ -85,110 +160,785 @@
 <script>
 // Prepare data from Flask
 const stats = {{ stats|tojson }};
+let currentFilters = {
+  sources: ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus'],
+  timeRange: 7,
+  severity: 'all'
+};
 
-// 1. Indicator Types Distribution (Pie Chart)
-const typeData = [
-  {
-    values: [stats.mitre_count, stats.cve_count],
-    labels: ['MITRE Techniques', 'CVE Vulnerabilities'],
+// Filter functions
+function applyFilters() {
+  console.log('applyFilters function called');
+  
+  const sources = [];
+  if (document.getElementById('filter-mitre').checked) sources.push('MITRE ATT&CK');
+  if (document.getElementById('filter-cisa').checked) sources.push('CISA KEV');
+  if (document.getElementById('filter-urlhaus').checked) sources.push('Abuse.ch URLhaus');
+  
+  currentFilters.sources = sources;
+  currentFilters.timeRange = parseInt(document.getElementById('time-range').value);
+  currentFilters.severity = document.getElementById('severity-filter').value;
+  
+  console.log('Current filters:', currentFilters);
+  
+  // Call API to get filtered data
+  fetchFilteredData();
+}
+
+function resetFilters() {
+  console.log('resetFilters function called');
+  
+  document.getElementById('filter-mitre').checked = true;
+  document.getElementById('filter-cisa').checked = true;
+  document.getElementById('filter-urlhaus').checked = true;
+  document.getElementById('time-range').value = '7';
+  document.getElementById('severity-filter').value = 'all';
+  
+  currentFilters = {
+    sources: ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus'],
+    timeRange: 7,
+    severity: 'all'
+  };
+  
+  console.log('Filters reset to:', currentFilters);
+  
+  // Call API to get original unfiltered data (all time, all severities)
+  fetchOriginalData();
+}
+
+function fetchOriginalData() {
+  console.log('Fetching original unfiltered data...');
+  
+  // Build query parameters for original data (all time, all severities)
+  const params = new URLSearchParams();
+  params.append('time_range', 'all');  // Get all time data
+  params.append('severity', 'all');    // Get all severities
+  
+  // Add all sources
+  ['MITRE ATT&CK', 'CISA KEV', 'Abuse.ch URLhaus'].forEach(source => {
+    params.append('sources', source);
+  });
+  
+  // Show loading state
+  showLoadingState();
+  
+  fetch(`/api/dashboard-stats?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Original data received:', data);
+      if (data.error) {
+        console.error('API error:', data.error);
+        return;
+      }
+      
+      // Update the stats object with original data
+      Object.assign(stats, data);
+      
+      // Update all charts with original data after a short delay
+      setTimeout(() => {
+        updateAllCharts();
+      }, 100);
+    })
+    .catch(error => {
+      console.error('Error fetching original data:', error);
+    });
+}
+
+function fetchFilteredData() {
+  console.log('Fetching filtered data...');
+  
+  // Build query parameters
+  const params = new URLSearchParams();
+  params.append('time_range', currentFilters.timeRange);
+  params.append('severity', currentFilters.severity);
+  
+  // Add sources as multiple parameters
+  currentFilters.sources.forEach(source => {
+    params.append('sources', source);
+  });
+  
+  // Show loading state
+  showLoadingState();
+  
+  fetch(`/api/dashboard-stats?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Filtered data received:', data);
+      if (data.error) {
+        console.error('API error:', data.error);
+        return;
+      }
+      
+      // Update the stats object with filtered data
+      Object.assign(stats, data);
+      
+      // Update all charts with new data after a short delay
+      setTimeout(() => {
+        updateAllCharts();
+      }, 100);
+    })
+    .catch(error => {
+      console.error('Error fetching filtered data:', error);
+    });
+}
+
+function showLoadingState() {
+  // Add loading indicator to charts
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  chartElements.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.innerHTML = '<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    }
+  });
+}
+
+function clearLoadingState() {
+  // Clear loading state and restore chart containers
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  chartElements.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.innerHTML = ''; // Clear the loading message
+    }
+  });
+}
+
+function updateAllCharts() {
+  console.log('Updating all charts with new data...');
+  console.log('Stats object for charts:', stats);
+  
+  // Clear loading state first
+  clearLoadingState();
+  
+  // Check if chart containers exist
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  chartElements.forEach(id => {
+    const element = document.getElementById(id);
+    console.log(`Chart container ${id} exists:`, !!element);
+    if (element) {
+      console.log(`Chart container ${id} innerHTML:`, element.innerHTML);
+    }
+  });
+  
+  try {
+    // Update pie chart
+    console.log('Updating pie chart with:', stats.source_breakdown);
+    updatePieChart(stats.source_breakdown);
+    
+    // Update bar chart
+    console.log('Updating bar chart with:', stats.source_breakdown);
+    updateBarChart(stats.source_breakdown);
+    
+    // Update trend chart
+    console.log('Updating trend chart with:', stats.recent_trend);
+    updateTrendChart(stats.recent_trend);
+    
+    // Update techniques chart
+    console.log('Updating techniques chart with:', stats.top_techniques);
+    updateTechniquesChart(stats.top_techniques);
+    
+    // Update severity chart
+    console.log('Updating severity chart with:', stats.severity_distribution);
+    updateSeverityChart(stats.severity_distribution);
+    
+    // Update stats cards
+    console.log('Updating stats cards with:', stats.source_breakdown);
+    updateStatsCards(stats.source_breakdown);
+    
+    console.log('All charts updated successfully');
+  } catch (error) {
+    console.error('Error in updateAllCharts:', error);
+  }
+}
+
+function updateTrendChart(trendData) {
+  console.log('updateTrendChart called with:', trendData);
+  
+  const trendChartData = [{
+    x: trendData.map(item => item[0]),
+    y: trendData.map(item => item[1]),
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: {
+      color: '#27ae60',
+      width: 3
+    },
+    marker: {
+      size: 8,
+      color: '#27ae60',
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    fill: 'tonexty',
+    fillcolor: 'rgba(39, 174, 96, 0.1)'
+  }];
+
+  const trendLayout = {
+    title: {
+      text: 'Recent Activity (Last 7 Days)',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Date',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'New Indicators',
+      tickformat: ','
+    },
+    height: 400,
+    showlegend: false
+  };
+
+  try {
+    Plotly.newPlot('trend-chart', trendChartData, trendLayout, {responsive: true});
+    console.log('Trend chart updated successfully');
+  } catch (error) {
+    console.error('Error updating trend chart:', error);
+  }
+}
+
+function updateTechniquesChart(techniquesData) {
+  console.log('updateTechniquesChart called with:', techniquesData);
+  
+  const techniquesChartData = [{
+    x: techniquesData.map(item => item[1]),
+    y: techniquesData.map(item => item[0]),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#9b59b6',
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    text: techniquesData.map(item => item[1]),
+    textposition: 'auto',
+    hoverinfo: 'y+x+text'
+  }];
+
+  const techniquesLayout = {
+    title: {
+      text: 'Most Common MITRE Techniques',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Count',
+      tickformat: ','
+    },
+    yaxis: { 
+      title: 'Technique',
+      automargin: true
+    },
+    height: 400,
+    showlegend: false
+  };
+
+  try {
+    Plotly.newPlot('techniques-chart', techniquesChartData, techniquesLayout, {responsive: true});
+    console.log('Techniques chart updated successfully');
+  } catch (error) {
+    console.error('Error updating techniques chart:', error);
+  }
+}
+
+function updateSeverityChart(severityData) {
+  console.log('updateSeverityChart called with:', severityData);
+  
+  const severityChartData = [{
+    values: severityData.map(item => item[1]),
+    labels: severityData.map(item => item[0] || 'Unknown'),
+    type: 'pie',
+    hole: 0.4,
+    marker: {
+      colors: ['#e74c3c', '#f39c12', '#f1c40f', '#27ae60', '#3498db', '#9b59b6']
+    },
+    textinfo: 'label+percent+value',
+    hoverinfo: 'label+percent+value',
+    textposition: 'outside'
+  }];
+
+  const severityLayout = {
+    title: {
+      text: 'Severity Score Distribution',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    height: 400,
+    showlegend: true,
+    legend: {
+      orientation: 'h',
+      y: -0.2
+    }
+  };
+
+  try {
+    Plotly.newPlot('severity-chart', severityChartData, severityLayout, {responsive: true});
+    console.log('Severity chart updated successfully');
+  } catch (error) {
+    console.error('Error updating severity chart:', error);
+  }
+}
+
+function updatePieChart(filteredData) {
+  console.log('updatePieChart called with:', filteredData);
+  
+  if (!filteredData || Object.keys(filteredData).length === 0) {
+    console.log('No data for pie chart, skipping update');
+    return;
+  }
+  
+  const values = Object.values(filteredData);
+  const labels = Object.keys(filteredData);
+  const colors = ['#3498db', '#e74c3c', '#f39c12'];
+  
+  console.log('Pie chart values:', values);
+  console.log('Pie chart labels:', labels);
+  
+  const typeData = [{
+    values: values,
+    labels: labels,
     type: 'pie',
     marker: {
-      colors: ['#3498db', '#e74c3c']
+      colors: colors.slice(0, labels.length)
+    },
+    textinfo: 'label+percent+value',
+    hoverinfo: 'label+percent+value',
+    textposition: 'outside'
+  }];
+
+  const typeLayout = {
+    title: {
+      text: 'Threat Intelligence Distribution',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    height: 400,
+    showlegend: true,
+    legend: {
+      orientation: 'h',
+      y: -0.2
     }
+  };
+
+  try {
+    console.log('Attempting to update pie chart with data:', typeData);
+    console.log('Plotly object available:', typeof Plotly !== 'undefined');
+    console.log('Chart element exists:', !!document.getElementById('type-chart'));
+    
+    Plotly.newPlot('type-chart', typeData, typeLayout, {responsive: true});
+    console.log('Pie chart updated successfully');
+    
+    // Check if chart was actually rendered
+    setTimeout(() => {
+      const chartElement = document.getElementById('type-chart');
+      console.log('Chart element after render:', chartElement);
+      console.log('Chart element children:', chartElement.children.length);
+      console.log('Chart element innerHTML length:', chartElement.innerHTML.length);
+      if (chartElement.children.length > 0) {
+        console.log('Chart appears to be rendered with', chartElement.children.length, 'children');
+      } else {
+        console.log('Chart container is empty after render');
+      }
+    }, 500);
+  } catch (error) {
+    console.error('Error updating pie chart:', error);
   }
-];
+}
 
-const typeLayout = {
-  title: 'Threat Intelligence Distribution',
-  height: 400
-};
+function updateBarChart(filteredData) {
+  console.log('updateBarChart called with:', filteredData);
+  
+  const sourceChartData = [{
+    x: Object.keys(filteredData),
+    y: Object.values(filteredData),
+    type: 'bar',
+    marker: {
+      color: ['#3498db', '#e74c3c', '#f39c12'].slice(0, Object.keys(filteredData).length),
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    text: Object.values(filteredData).map(val => val.toLocaleString()),
+    textposition: 'auto',
+    hoverinfo: 'x+y+text'
+  }];
 
-Plotly.newPlot('type-chart', typeData, typeLayout);
+  const sourceLayout = {
+    title: {
+      text: 'Data Sources Overview',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Source',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'Count',
+      tickformat: ','
+    },
+    height: 400,
+    showlegend: false
+  };
 
-// 2. Source Distribution (Bar Chart)
-const sourceData = {{ stats.source_distribution|tojson }};
-const sourceChartData = [{
-  x: sourceData.map(item => item[0]),
-  y: sourceData.map(item => item[1]),
-  type: 'bar',
-  marker: {
-    color: '#2c3e50'
+  try {
+    Plotly.newPlot('source-chart', sourceChartData, sourceLayout, {responsive: true});
+    console.log('Bar chart updated successfully');
+  } catch (error) {
+    console.error('Error updating bar chart:', error);
   }
-}];
+}
 
-const sourceLayout = {
-  title: 'Data Sources',
-  xaxis: { title: 'Source' },
-  yaxis: { title: 'Count' },
-  height: 400
-};
-
-Plotly.newPlot('source-chart', sourceChartData, sourceLayout);
-
-// 3. Recent Activity Trend (Line Chart)
-const trendData = {{ stats.recent_trend|tojson }};
-const trendChartData = [{
-  x: trendData.map(item => item[0]),
-  y: trendData.map(item => item[1]),
-  type: 'scatter',
-  mode: 'lines+markers',
-  line: {
-    color: '#27ae60',
-    width: 3
-  },
-  marker: {
-    size: 8,
-    color: '#27ae60'
+function updateStatsCards(filteredData) {
+  const total = Object.values(filteredData).reduce((sum, val) => sum + val, 0);
+  // Update the first stats card (Total Indicators)
+  const totalCards = document.querySelectorAll('.stats-card .stats-number');
+  if (totalCards.length > 0) {
+    totalCards[0].textContent = total.toLocaleString();
   }
-}];
-
-const trendLayout = {
-  title: 'Recent Activity (Last 7 Days)',
-  xaxis: { title: 'Date' },
-  yaxis: { title: 'New Indicators' },
-  height: 400
-};
-
-Plotly.newPlot('trend-chart', trendChartData, trendLayout);
-
-// 4. Top MITRE Techniques (Horizontal Bar Chart)
-const techniquesData = {{ stats.top_techniques|tojson }};
-const techniquesChartData = [{
-  x: techniquesData.map(item => item[1]),
-  y: techniquesData.map(item => item[0]),
-  type: 'bar',
-  orientation: 'h',
-  marker: {
-    color: '#9b59b6'
+  
+  // Update individual source cards
+  const mitreCard = document.querySelectorAll('.stats-card .stats-number')[1];
+  const cisaCard = document.querySelectorAll('.stats-card .stats-number')[2];
+  const urlhausCard = document.querySelectorAll('.stats-card .stats-number')[3];
+  
+  if (mitreCard && filteredData['MITRE ATT&CK'] !== undefined) {
+    mitreCard.textContent = filteredData['MITRE ATT&CK'].toLocaleString();
   }
-}];
-
-const techniquesLayout = {
-  title: 'Most Common MITRE Techniques',
-  xaxis: { title: 'Count' },
-  yaxis: { title: 'Technique' },
-  height: 400
-};
-
-Plotly.newPlot('techniques-chart', techniquesChartData, techniquesLayout);
-
-// 5. Severity Distribution (Donut Chart)
-const severityData = {{ stats.severity_distribution|tojson }};
-const severityChartData = [{
-  values: severityData.map(item => item[1]),
-  labels: severityData.map(item => item[0] || 'Unknown'),
-  type: 'pie',
-  hole: 0.4,
-  marker: {
-    colors: ['#e74c3c', '#f39c12', '#f1c40f', '#27ae60', '#3498db']
+  if (cisaCard && filteredData['CISA KEV'] !== undefined) {
+    cisaCard.textContent = filteredData['CISA KEV'].toLocaleString();
   }
-}];
+  if (urlhausCard && filteredData['Abuse.ch URLhaus'] !== undefined) {
+    urlhausCard.textContent = filteredData['Abuse.ch URLhaus'].toLocaleString();
+  }
+  
+  // Update the Total (K) card
+  const totalKCard = document.querySelectorAll('.stats-card .stats-number')[5];
+  if (totalKCard) {
+    totalKCard.textContent = (total / 1000).toFixed(1) + 'K';
+  }
+}
 
-const severityLayout = {
-  title: 'Severity Score Distribution',
-  height: 400
-};
+// Initialize charts
+function initializeCharts() {
+  // 1. Threat Intelligence Distribution (Pie Chart) - Now with 3 sources
+  const typeData = [
+    {
+      values: [stats.mitre_count, stats.cve_count, stats.urlhaus_count],
+      labels: ['MITRE Techniques', 'CISA Vulnerabilities', 'Malicious URLs'],
+      type: 'pie',
+      marker: {
+        colors: ['#3498db', '#e74c3c', '#f39c12']
+      },
+      textinfo: 'label+percent+value',
+      hoverinfo: 'label+percent+value',
+      textposition: 'outside'
+    }
+  ];
 
-Plotly.newPlot('severity-chart', severityChartData, severityLayout);
+  const typeLayout = {
+    title: {
+      text: 'Threat Intelligence Distribution',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    height: 400,
+    showlegend: true,
+    legend: {
+      orientation: 'h',
+      y: -0.2
+    }
+  };
+
+  Plotly.newPlot('type-chart', typeData, typeLayout, {responsive: true});
+
+  // 2. Source Distribution (Bar Chart) - Enhanced with colors and interactivity
+  const sourceBreakdown = stats.source_breakdown;
+  const sourceChartData = [{
+    x: Object.keys(sourceBreakdown),
+    y: Object.values(sourceBreakdown),
+    type: 'bar',
+    marker: {
+      color: ['#3498db', '#e74c3c', '#f39c12'],
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    text: Object.values(sourceBreakdown).map(val => val.toLocaleString()),
+    textposition: 'auto',
+    hoverinfo: 'x+y+text'
+  }];
+
+  const sourceLayout = {
+    title: {
+      text: 'Data Sources Overview',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Source',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'Count',
+      tickformat: ','
+    },
+    height: 400,
+    showlegend: false
+  };
+
+  Plotly.newPlot('source-chart', sourceChartData, sourceLayout, {responsive: true});
+
+  // 3. Recent Activity Trend (Line Chart) - Enhanced styling
+  const trendData = {{ stats.recent_trend|tojson }};
+  const trendChartData = [{
+    x: trendData.map(item => item[0]),
+    y: trendData.map(item => item[1]),
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: {
+      color: '#27ae60',
+      width: 3
+    },
+    marker: {
+      size: 8,
+      color: '#27ae60',
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    fill: 'tonexty',
+    fillcolor: 'rgba(39, 174, 96, 0.1)'
+  }];
+
+  const trendLayout = {
+    title: {
+      text: 'Recent Activity (Last 7 Days)',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Date',
+      tickangle: -45
+    },
+    yaxis: { 
+      title: 'New Indicators',
+      tickformat: ','
+    },
+    height: 400,
+    showlegend: false
+  };
+
+  Plotly.newPlot('trend-chart', trendChartData, trendLayout, {responsive: true});
+
+  // 4. Top MITRE Techniques (Horizontal Bar Chart) - Enhanced
+  const techniquesData = {{ stats.top_techniques|tojson }};
+  const techniquesChartData = [{
+    x: techniquesData.map(item => item[1]),
+    y: techniquesData.map(item => item[0]),
+    type: 'bar',
+    orientation: 'h',
+    marker: {
+      color: '#9b59b6',
+      line: {
+        color: '#2c3e50',
+        width: 1
+      }
+    },
+    text: techniquesData.map(item => item[1]),
+    textposition: 'auto',
+    hoverinfo: 'y+x+text'
+  }];
+
+  const techniquesLayout = {
+    title: {
+      text: 'Most Common MITRE Techniques',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    xaxis: { 
+      title: 'Count',
+      tickformat: ','
+    },
+    yaxis: { 
+      title: 'Technique',
+      automargin: true
+    },
+    height: 400,
+    showlegend: false
+  };
+
+  Plotly.newPlot('techniques-chart', techniquesChartData, techniquesLayout, {responsive: true});
+
+  // 5. Severity Distribution (Donut Chart) - Enhanced
+  const severityData = {{ stats.severity_distribution|tojson }};
+  const severityChartData = [{
+    values: severityData.map(item => item[1]),
+    labels: severityData.map(item => item[0] || 'Unknown'),
+    type: 'pie',
+    hole: 0.4,
+    marker: {
+      colors: ['#e74c3c', '#f39c12', '#f1c40f', '#27ae60', '#3498db', '#9b59b6']
+    },
+    textinfo: 'label+percent+value',
+    hoverinfo: 'label+percent+value',
+    textposition: 'outside'
+  }];
+
+  const severityLayout = {
+    title: {
+      text: 'Severity Score Distribution',
+      font: { size: 16, color: '#2c3e50' }
+    },
+    height: 400,
+    showlegend: true,
+    legend: {
+      orientation: 'h',
+      y: -0.2
+    }
+  };
+
+  try {
+    Plotly.newPlot('severity-chart', severityChartData, severityLayout, {responsive: true});
+    console.log('Severity chart updated successfully');
+  } catch (error) {
+    console.error('Error updating severity chart:', error);
+  }
+  
+  // Set up Plotly event handlers after charts are created
+  setupPlotlyEventHandlers();
+}
+
+function setupPlotlyEventHandlers() {
+  // Enhanced click event handlers for drill-down functionality
+  document.getElementById('type-chart').on('plotly_click', function(data) {
+    const point = data.points[0];
+    const source = point.label;
+    const count = point.value;
+    
+    // Navigate to data explorer with filter
+    let filterType = '';
+    if (source.includes('MITRE')) filterType = 'MITRE Technique';
+    else if (source.includes('CISA')) filterType = 'CVE Vulnerability';
+    else if (source.includes('Malicious')) filterType = 'Malicious URL';
+    
+    if (filterType) {
+      window.location.href = `/data-explorer?type=${encodeURIComponent(filterType)}`;
+    }
+  });
+
+  document.getElementById('source-chart').on('plotly_click', function(data) {
+    const point = data.points[0];
+    const source = point.x;
+    const count = point.y;
+    
+    // Navigate to data explorer with source filter
+    let filterType = '';
+    if (source.includes('MITRE')) filterType = 'MITRE Technique';
+    else if (source.includes('CISA')) filterType = 'CVE Vulnerability';
+    else if (source.includes('URLhaus')) filterType = 'Malicious URL';
+    
+    if (filterType) {
+      window.location.href = `/data-explorer?type=${encodeURIComponent(filterType)}`;
+    }
+  });
+
+  // Add tooltip enhancement
+  document.getElementById('severity-chart').on('plotly_hover', function(data) {
+    const point = data.points[0];
+    console.log(`Severity: ${point.label}, Count: ${point.value}`);
+  });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded event fired');
+  
+  // Initialize charts first
+  initializeCharts();
+  
+  // Set up filter event listeners after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    console.log('Setting up filter event listeners...');
+    
+    // Filter event listeners
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    
+    console.log('Apply filters button found:', applyFiltersBtn);
+    console.log('Reset filters button found:', resetFiltersBtn);
+    
+    if (applyFiltersBtn) {
+      console.log('Button text:', applyFiltersBtn.textContent);
+      console.log('Button disabled:', applyFiltersBtn.disabled);
+      console.log('Button type:', applyFiltersBtn.type);
+      
+      applyFiltersBtn.addEventListener('click', function(e) {
+        console.log('Apply filters button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        applyFilters();
+        return false;
+      });
+      
+      // Test if the button is clickable by adding a simple test
+      applyFiltersBtn.addEventListener('mouseenter', function() {
+        console.log('Mouse entered Apply Filters button');
+      });
+      
+      console.log('Apply filters event listener attached');
+    } else {
+      console.error('Apply filters button not found!');
+    }
+    
+    if (resetFiltersBtn) {
+      resetFiltersBtn.addEventListener('click', function(e) {
+        console.log('Reset filters button clicked!');
+        e.preventDefault();
+        resetFilters();
+      });
+      console.log('Reset filters event listener attached');
+    } else {
+      console.error('Reset filters button not found!');
+    }
+    
+    // Auto-apply filters when checkboxes change
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    console.log('Found checkboxes:', checkboxes.length);
+    
+    checkboxes.forEach((checkbox, index) => {
+      checkbox.addEventListener('change', function() {
+        console.log(`Checkbox ${index} changed:`, this.checked);
+        applyFilters();
+      });
+      console.log(`Checkbox ${index} event listener attached`);
+    });
+    
+    const timeRangeSelect = document.getElementById('time-range');
+    const severityFilterSelect = document.getElementById('severity-filter');
+    
+    console.log('Time range select found:', timeRangeSelect);
+    console.log('Severity filter select found:', severityFilterSelect);
+    
+    if (timeRangeSelect) {
+      timeRangeSelect.addEventListener('change', function() {
+        console.log('Time range changed:', this.value);
+        applyFilters();
+      });
+      console.log('Time range event listener attached');
+    }
+    
+    if (severityFilterSelect) {
+      severityFilterSelect.addEventListener('change', function() {
+        console.log('Severity filter changed:', this.value);
+        applyFilters();
+      });
+      console.log('Severity filter event listener attached');
+    }
+    
+    console.log('All filter event listeners set up successfully');
+  }, 100);
+});
 </script>
 {% endblock %}
