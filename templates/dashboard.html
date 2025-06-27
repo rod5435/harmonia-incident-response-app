@@ -157,6 +157,84 @@
   </div>
 </div>
 
+<!-- Phase 3: Temporal Analysis -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-clock me-2"></i>Temporal Analysis - Threat Trends Over Time</h5>
+        <div class="row">
+          <div class="col-md-8">
+            <div id="temporal-chart"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-chart-line me-2"></i>Trend Analysis</h6>
+                <div id="trend-analysis">
+                  <div class="mb-3">
+                    <strong>Average Daily Threats:</strong>
+                    <span id="avg-daily" class="badge bg-primary ms-2">-</span>
+                  </div>
+                  <div class="mb-3">
+                    <strong>Trend Direction:</strong>
+                    <span id="trend-direction" class="badge bg-success ms-2">-</span>
+                  </div>
+                  <div class="mb-3">
+                    <strong>Peak Activity:</strong>
+                    <div id="peak-dates" class="small text-muted">-</div>
+                  </div>
+                  <div class="mb-3">
+                    <strong>Weekly Pattern:</strong>
+                    <div id="weekly-pattern" class="small text-muted">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3: Geographic Visualization -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="fas fa-globe me-2"></i>Geographic Threat Intelligence</h5>
+        <div class="row">
+          <div class="col-md-8">
+            <div id="geographic-chart"></div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-map-marker-alt me-2"></i>Geographic Insights</h6>
+                <div id="geographic-insights">
+                  <div class="mb-3">
+                    <strong>Top Threat Countries:</strong>
+                    <div id="top-countries" class="small text-muted">-</div>
+                  </div>
+                  <div class="mb-3">
+                    <strong>Threat Distribution:</strong>
+                    <div id="threat-distribution" class="small text-muted">-</div>
+                  </div>
+                  <div class="mb-3">
+                    <strong>Regional Hotspots:</strong>
+                    <div id="regional-hotspots" class="small text-muted">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Prepare data from Flask
 const stats = {{ stats|tojson }};
@@ -284,7 +362,7 @@ function fetchFilteredData() {
 
 function showLoadingState() {
   // Add loading indicator to charts
-  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart', 'temporal-chart', 'geographic-chart'];
   chartElements.forEach(id => {
     const element = document.getElementById(id);
     if (element) {
@@ -295,7 +373,7 @@ function showLoadingState() {
 
 function clearLoadingState() {
   // Clear loading state and restore chart containers
-  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart', 'temporal-chart', 'geographic-chart'];
   chartElements.forEach(id => {
     const element = document.getElementById(id);
     if (element) {
@@ -312,7 +390,7 @@ function updateAllCharts() {
   clearLoadingState();
   
   // Check if chart containers exist
-  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart'];
+  const chartElements = ['type-chart', 'source-chart', 'trend-chart', 'techniques-chart', 'severity-chart', 'temporal-chart', 'geographic-chart'];
   chartElements.forEach(id => {
     const element = document.getElementById(id);
     console.log(`Chart container ${id} exists:`, !!element);
@@ -341,6 +419,14 @@ function updateAllCharts() {
     // Update severity chart
     console.log('Updating severity chart with:', stats.severity_distribution);
     updateSeverityChart(stats.severity_distribution);
+    
+    // Update temporal analysis
+    console.log('Updating temporal analysis...');
+    updateTemporalAnalysis();
+    
+    // Update geographic analysis
+    console.log('Updating geographic analysis...');
+    updateGeographicAnalysis();
     
     // Update stats cards
     console.log('Updating stats cards with:', stats.source_breakdown);
@@ -806,6 +892,11 @@ function initializeCharts() {
     console.error('Error updating severity chart:', error);
   }
   
+  // Initialize Phase 3 charts
+  console.log('Initializing Phase 3 charts...');
+  updateTemporalAnalysis();
+  updateGeographicAnalysis();
+  
   // Set up Plotly event handlers after charts are created
   setupPlotlyEventHandlers();
 }
@@ -940,5 +1031,206 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('All filter event listeners set up successfully');
   }, 100);
 });
+
+// Phase 3: Temporal Analysis Functions
+function updateTemporalAnalysis() {
+  console.log('updateTemporalAnalysis called');
+  
+  // Build query parameters based on current filters
+  const params = new URLSearchParams();
+  params.append('days', currentFilters.timeRange);
+  if (currentFilters.sources.length > 0) {
+    params.append('source', currentFilters.sources.join(','));
+  }
+  
+  // Fetch temporal data with filters
+  fetch(`/api/temporal-analysis?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Temporal data received:', data);
+      
+      // Create temporal chart
+      const temporalChartData = [
+        {
+          x: data.dates,
+          y: data.mitre,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'MITRE ATT&CK',
+          line: { color: '#3498db', width: 2 },
+          marker: { size: 6 }
+        },
+        {
+          x: data.dates,
+          y: data.cisa,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'CISA KEV',
+          line: { color: '#e74c3c', width: 2 },
+          marker: { size: 6 }
+        },
+        {
+          x: data.dates,
+          y: data.urlhaus,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'URLhaus',
+          line: { color: '#f39c12', width: 2 },
+          marker: { size: 6 }
+        },
+        {
+          x: data.dates,
+          y: data.total,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'Total',
+          line: { color: '#27ae60', width: 3 },
+          marker: { size: 8 }
+        }
+      ];
+
+      const temporalLayout = {
+        title: {
+          text: `Threat Intelligence Trends (Last ${currentFilters.timeRange} Days)`,
+          font: { size: 16, color: '#2c3e50' }
+        },
+        xaxis: { 
+          title: 'Date',
+          tickangle: -45
+        },
+        yaxis: { 
+          title: 'Number of Indicators',
+          tickformat: ','
+        },
+        height: 400,
+        showlegend: true,
+        legend: {
+          orientation: 'h',
+          y: -0.2
+        }
+      };
+
+      Plotly.newPlot('temporal-chart', temporalChartData, temporalLayout, {responsive: true});
+      
+      // Fetch and update trend analysis with same filters
+      fetch(`/api/threat-trends?days=${currentFilters.timeRange}`)
+        .then(response => response.json())
+        .then(trendsData => {
+          console.log('Trends data received:', trendsData);
+          
+          // Update trend analysis panel
+          document.getElementById('avg-daily').textContent = trendsData.average_daily;
+          
+          const trendDirection = document.getElementById('trend-direction');
+          trendDirection.textContent = trendsData.trend_direction;
+          trendDirection.className = `badge ms-2 ${
+            trendsData.trend_direction === 'increasing' ? 'bg-danger' :
+            trendsData.trend_direction === 'decreasing' ? 'bg-success' : 'bg-warning'
+          }`;
+          
+          // Update peak dates
+          const peakDatesHtml = trendsData.peak_dates.map(([date, count]) => 
+            `${date}: ${count} threats`
+          ).join('<br>');
+          document.getElementById('peak-dates').innerHTML = peakDatesHtml || 'No peak data';
+          
+          // Update weekly pattern
+          const weeklyPatternHtml = Object.entries(trendsData.weekly_pattern)
+            .sort((a, b) => b[1] - a[1])
+            .map(([day, avg]) => `${day}: ${avg.toFixed(1)} avg`)
+            .join('<br>');
+          document.getElementById('weekly-pattern').innerHTML = weeklyPatternHtml || 'No pattern data';
+        })
+        .catch(error => {
+          console.error('Error fetching trends data:', error);
+        });
+    })
+    .catch(error => {
+      console.error('Error fetching temporal data:', error);
+    });
+}
+
+// Phase 3: Geographic Analysis Functions
+function updateGeographicAnalysis() {
+  console.log('updateGeographicAnalysis called');
+  
+  // Build query parameters based on current filters
+  const params = new URLSearchParams();
+  params.append('time_range', currentFilters.timeRange);
+  params.append('severity', currentFilters.severity);
+  currentFilters.sources.forEach(source => {
+    params.append('sources', source);
+  });
+  
+  // Fetch geographic data with filters
+  fetch(`/api/geographic-analysis?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      console.log('Geographic data received:', data);
+      
+      // Create geographic chart (horizontal bar chart for countries)
+      const geographicChartData = [{
+        x: data.totals,
+        y: data.countries,
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: data.totals.map(value => {
+            if (value > 50) return '#e74c3c';
+            if (value > 20) return '#f39c12';
+            if (value > 10) return '#f1c40f';
+            return '#27ae60';
+          })
+        },
+        text: data.totals,
+        textposition: 'auto',
+        hoverinfo: 'y+x+text'
+      }];
+
+      const geographicLayout = {
+        title: {
+          text: 'Geographic Threat Distribution',
+          font: { size: 16, color: '#2c3e50' }
+        },
+        xaxis: { 
+          title: 'Total Threats',
+          tickformat: ','
+        },
+        yaxis: { 
+          title: 'Country',
+          automargin: true
+        },
+        height: 500,
+        showlegend: false
+      };
+
+      Plotly.newPlot('geographic-chart', geographicChartData, geographicLayout, {responsive: true});
+      
+      // Update geographic insights panel
+      const topCountriesHtml = data.countries.slice(0, 5).map((country, index) => 
+        `${index + 1}. ${country}: ${data.totals[index]} threats`
+      ).join('<br>');
+      document.getElementById('top-countries').innerHTML = topCountriesHtml;
+      
+      // Calculate threat distribution
+      const totalThreats = data.totals.reduce((sum, val) => sum + val, 0);
+      const highThreatCountries = data.countries.filter((_, index) => data.totals[index] > 20).length;
+      const mediumThreatCountries = data.countries.filter((_, index) => data.totals[index] > 10 && data.totals[index] <= 20).length;
+      const lowThreatCountries = data.countries.filter((_, index) => data.totals[index] <= 10).length;
+      
+      document.getElementById('threat-distribution').innerHTML = 
+        `High (>20): ${highThreatCountries} countries<br>` +
+        `Medium (10-20): ${mediumThreatCountries} countries<br>` +
+        `Low (<10): ${lowThreatCountries} countries`;
+      
+      // Identify regional hotspots
+      const hotspots = data.countries.slice(0, 3).map(country => country);
+      document.getElementById('regional-hotspots').innerHTML = 
+        hotspots.map(country => `• ${country}`).join('<br>');
+    })
+    .catch(error => {
+      console.error('Error fetching geographic data:', error);
+    });
+}
 </script>
 {% endblock %}

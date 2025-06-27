@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db, Indicator, UserQuery
-from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history, get_filtered_dashboard_stats
+from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history, get_filtered_dashboard_stats, get_temporal_analysis, get_geographic_analysis, get_threat_trends_analysis
 from openai_integration import ask_gpt, analyze_threat_patterns, generate_threat_report, correlate_threats, analyze_attack_chain, get_ai_insights_summary
 from reporting import ReportGenerator
 from datetime import datetime
@@ -292,11 +292,17 @@ def create_app():
     def api_dashboard_stats():
         """Get filtered dashboard statistics"""
         try:
-            # Get filter parameters
-            time_range_param = request.args.get('time_range', '7')
-            time_range = int(time_range_param) if time_range_param != 'all' else 'all'
+            time_range_param = request.args.get('time_range', 'all')
             severity_filter = request.args.get('severity', 'all')
-            sources = request.args.getlist('sources')  # List of selected sources
+            sources = request.args.getlist('sources')
+            
+            # Convert time_range to int if it's numeric, otherwise keep as 'all'
+            time_range = time_range_param
+            if time_range_param != 'all':
+                try:
+                    time_range = int(time_range_param)
+                except ValueError:
+                    time_range = 'all'
             
             print(f"Dashboard stats API called with: time_range={time_range}, severity={severity_filter}, sources={sources}")
             
@@ -305,6 +311,59 @@ def create_app():
             return jsonify(stats)
         except Exception as e:
             print(f"Dashboard stats API error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/temporal-analysis')
+    def api_temporal_analysis():
+        """Get temporal analysis data for threat trends"""
+        try:
+            days = int(request.args.get('days', 30))
+            source = request.args.get('source', 'all')
+            
+            # Parse source filter if provided
+            sources = []
+            if source and source != 'all':
+                sources = [s.strip() for s in source.split(',') if s.strip()]
+            
+            temporal_data = get_temporal_analysis(days, source)
+            return jsonify(temporal_data)
+        except Exception as e:
+            print(f"Temporal analysis API error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/geographic-analysis')
+    def api_geographic_analysis():
+        """Get geographic analysis data for threat intelligence"""
+        try:
+            # Get filter parameters
+            time_range_param = request.args.get('time_range', 'all')
+            severity_filter = request.args.get('severity', 'all')
+            sources = request.args.getlist('sources')
+            
+            # Convert time_range to int if it's numeric, otherwise keep as 'all'
+            time_range = time_range_param
+            if time_range_param != 'all':
+                try:
+                    time_range = int(time_range_param)
+                except ValueError:
+                    time_range = 'all'
+            
+            geographic_data = get_geographic_analysis(time_range, severity_filter, sources)
+            return jsonify(geographic_data)
+        except Exception as e:
+            print(f"Geographic analysis API error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/threat-trends')
+    def api_threat_trends():
+        """Get detailed threat trends analysis including peak periods and patterns"""
+        try:
+            days = int(request.args.get('days', 30))
+            
+            trends_data = get_threat_trends_analysis(days)
+            return jsonify(trends_data)
+        except Exception as e:
+            print(f"Threat trends API error: {e}")
             return jsonify({'error': str(e)}), 500
 
     # Export and Reporting Routes
