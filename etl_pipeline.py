@@ -11,6 +11,15 @@ import io
 MITRE_GITHUB_JSON_URL = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
 ABUSE_CH_URLHAUS_URL = "https://urlhaus.abuse.ch/downloads/csv/"
 
+# Import for data update tracking
+try:
+    from app import create_app
+    from models import db, DataUpdate
+    TRACKING_AVAILABLE = True
+except ImportError:
+    TRACKING_AVAILABLE = False
+    print("Warning: Data update tracking not available (Flask app not accessible)")
+
 class ThreatIntelligenceETL:
     def __init__(self, db_path: str = 'incident_response.db'):
         self.db_path = db_path
@@ -312,8 +321,41 @@ class ThreatIntelligenceETL:
         
         if success:
             print("✅ ETL pipeline completed successfully!")
+            if TRACKING_AVAILABLE:
+                try:
+                    # Record data update using Flask app context
+                    app = create_app()
+                    with app.app_context():
+                        update = DataUpdate(
+                            update_type='etl_pipeline',
+                            status='success',
+                            records_processed=len(normalized_data),
+                            details=json.dumps({
+                                'mitre_count': len(mitre_data),
+                                'cisa_count': len(cisa_data),
+                                'urlhaus_count': len(urlhaus_data)
+                            })
+                        )
+                        db.session.add(update)
+                        db.session.commit()
+                        print(f"📊 Data update recorded: {len(normalized_data)} indicators processed")
+                except Exception as e:
+                    print(f"Warning: Could not record data update: {e}")
         else:
             print("❌ ETL pipeline failed at storage step.")
+            if TRACKING_AVAILABLE:
+                try:
+                    app = create_app()
+                    with app.app_context():
+                        update = DataUpdate(
+                            update_type='etl_pipeline',
+                            status='failed',
+                            error_message='ETL pipeline failed at storage step'
+                        )
+                        db.session.add(update)
+                        db.session.commit()
+                except Exception as e:
+                    print(f"Warning: Could not record failed update: {e}")
         
         return success
 

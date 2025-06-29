@@ -36,3 +36,15 @@ class Export(db.Model):
     file_size = db.Column(db.Integer)  # in bytes
     generated_at = db.Column(db.DateTime, default=datetime.utcnow)
     parameters = db.Column(db.Text)  # JSON string of additional parameters
+
+class DataUpdate(db.Model):
+    __tablename__ = 'data_updates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    update_type = db.Column(db.String(50))  # 'etl_pipeline', 'manual_update'
+    status = db.Column(db.String(50))  # 'success', 'failed', 'in_progress'
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    records_processed = db.Column(db.Integer, default=0)
+    error_message = db.Column(db.Text)
+    details = db.Column(db.Text)  # JSON string of additional details

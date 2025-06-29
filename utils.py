@@ -1,4 +1,4 @@
-from models import Indicator, db, Export
+from models import Indicator, db, Export, DataUpdate
 from sqlalchemy import func, or_, and_
 from datetime import datetime, timedelta
 import json
@@ -831,3 +831,54 @@ def get_threat_trends_analysis(days=30):
         'weekly_pattern': weekly_avg,
         'temporal_data': temporal_data
     }
+
+def record_data_update(update_type='etl_pipeline', status='success', records_processed=0, error_message=None, details=None):
+    """
+    Record a data update operation in the database
+    """
+    data_update = DataUpdate(
+        update_type=update_type,
+        status=status,
+        completed_at=datetime.now(),
+        records_processed=records_processed,
+        error_message=error_message,
+        details=details
+    )
+    
+    db.session.add(data_update)
+    db.session.commit()
+    
+    return data_update
+
+def get_last_data_update():
+    """
+    Get the last successful data update information
+    """
+    last_update = DataUpdate.query.filter_by(status='success').order_by(DataUpdate.completed_at.desc()).first()
+    
+    if last_update:
+        return {
+            'completed_at': last_update.completed_at,
+            'update_type': last_update.update_type,
+            'records_processed': last_update.records_processed,
+            'time_ago': get_time_ago(last_update.completed_at)
+        }
+    return None
+
+def get_time_ago(dt):
+    """
+    Get a human-readable time ago string
+    """
+    now = datetime.now()
+    diff = now - dt
+    
+    if diff.days > 0:
+        return f"{diff.days} day{'s' if diff.days != 1 else ''} ago"
+    elif diff.seconds >= 3600:
+        hours = diff.seconds // 3600
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    elif diff.seconds >= 60:
+        minutes = diff.seconds // 60
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    else:
+        return "Just now"

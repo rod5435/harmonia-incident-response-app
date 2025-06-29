@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db, Indicator, UserQuery
-from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history, get_filtered_dashboard_stats, get_temporal_analysis, get_geographic_analysis, get_threat_trends_analysis
+from utils import get_indicator_counts, get_indicators_by_type, get_dashboard_stats, advanced_search_indicators, get_filter_options, record_export, get_export_history, get_filtered_dashboard_stats, get_temporal_analysis, get_geographic_analysis, get_threat_trends_analysis, get_last_data_update
 from openai_integration import ask_gpt, analyze_threat_patterns, generate_threat_report, correlate_threats, analyze_attack_chain, get_ai_insights_summary
 from reporting import ReportGenerator
 from datetime import datetime
@@ -26,16 +26,24 @@ def create_app():
         try:
             total_indicators = Indicator.query.count()
             mitre_count = Indicator.query.filter_by(indicator_type='MITRE Technique').count()
-            cisa_count = Indicator.query.filter_by(source='CISA KEV').count()
+            cve_count = Indicator.query.filter_by(indicator_type='CVE Vulnerability').count()
+            urlhaus_count = Indicator.query.filter_by(indicator_type='Malicious URL').count()
+            
+            # Get last data update information
+            last_update = get_last_data_update()
         except:
             total_indicators = 0
             mitre_count = 0
-            cisa_count = 0
+            cve_count = 0
+            urlhaus_count = 0
+            last_update = None
         
         return render_template('index.html', 
                              total_indicators=total_indicators,
                              mitre_count=mitre_count,
-                             cisa_count=cisa_count)
+                             cve_count=cve_count,
+                             urlhaus_count=urlhaus_count,
+                             last_update=last_update)
 
     @app.route('/data-explorer')
     def data_explorer():
@@ -577,6 +585,92 @@ def create_app():
         except Exception as e:
             print(f"Data export error: {e}")
             return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/update-data', methods=['POST'])
+    def api_update_data():
+        """Manually trigger ETL pipeline to update threat intelligence data"""
+        try:
+            import subprocess
+            import sys
+            import json
+            from utils import record_data_update
+            
+            # Record that update is starting
+            record_data_update(
+                update_type='manual_update',
+                status='in_progress',
+                details=json.dumps({'triggered_by': 'api'})
+            )
+            
+            # Run the ETL pipeline
+            result = subprocess.run([
+                sys.executable, 'etl_pipeline.py'
+            ], capture_output=True, text=True, timeout=300)  # 5 minute timeout
+            
+            if result.returncode == 0:
+                # Success - count the records
+                total_indicators = Indicator.query.count()
+                mitre_count = Indicator.query.filter_by(indicator_type='MITRE Technique').count()
+                cve_count = Indicator.query.filter_by(indicator_type='CVE Vulnerability').count()
+                urlhaus_count = Indicator.query.filter_by(indicator_type='Malicious URL').count()
+                
+                record_data_update(
+                    update_type='manual_update',
+                    status='success',
+                    records_processed=total_indicators,
+                    details=json.dumps({
+                        'mitre_count': mitre_count,
+                        'cve_count': cve_count,
+                        'urlhaus_count': urlhaus_count,
+                        'output': result.stdout
+                    })
+                )
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Data updated successfully! Processed {total_indicators} indicators.',
+                    'stats': {
+                        'total_indicators': total_indicators,
+                        'mitre_count': mitre_count,
+                        'cve_count': cve_count,
+                        'urlhaus_count': urlhaus_count
+                    }
+                })
+            else:
+                # Failed
+                record_data_update(
+                    update_type='manual_update',
+                    status='failed',
+                    error_message=result.stderr,
+                    details=json.dumps({'output': result.stdout, 'error': result.stderr})
+                )
+                
+                return jsonify({
+                    'success': False,
+                    'message': 'Data update failed. Check the logs for details.',
+                    'error': result.stderr
+                }), 500
+                
+        except subprocess.TimeoutExpired:
+            record_data_update(
+                update_type='manual_update',
+                status='failed',
+                error_message='Update timed out after 5 minutes'
+            )
+            return jsonify({
+                'success': False,
+                'message': 'Data update timed out. The process took longer than 5 minutes.'
+            }), 500
+        except Exception as e:
+            record_data_update(
+                update_type='manual_update',
+                status='failed',
+                error_message=str(e)
+            )
+            return jsonify({
+                'success': False,
+                'message': f'Data update failed: {str(e)}'
+            }), 500
 
     return app
 

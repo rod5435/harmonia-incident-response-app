@@ -2,6 +2,8 @@ import sqlite3
 import json
 from datetime import datetime
 import os
+from app import create_app
+from models import db, Indicator, UserQuery, Export, DataUpdate
 
 def create_database():
     """Create database tables using direct SQLite commands"""
@@ -111,6 +113,14 @@ def check_database_state():
     except Exception as e:
         print(f"❌ Error checking database state: {e}")
 
+def init_db():
+    app = create_app()
+    with app.app_context():
+        # Create all tables
+        db.create_all()
+        print("Database initialized successfully!")
+        print("Tables created: indicators, user_queries, exports, data_updates")
+
 if __name__ == '__main__':
     print("=== SIMPLE DATABASE INITIALIZATION ===")
     
@@ -126,4 +136,6 @@ if __name__ == '__main__':
     # Check final state
     check_database_state()
     
-    print("\n✅ Database initialization complete!") 
+    print("\n✅ Database initialization complete!")
+    
+    init_db() 

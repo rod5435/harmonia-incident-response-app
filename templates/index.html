@@ -33,6 +33,52 @@
   </div>
 </div>
 
+<!-- Data Update Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h5><i class="fas fa-sync-alt me-2"></i>Data Freshness</h5>
+            {% if last_update %}
+              <p class="mb-2">
+                <strong>Last Updated:</strong> 
+                <span class="badge bg-success">{{ last_update.time_ago }}</span>
+                <small class="text-muted ms-2">({{ last_update.completed_at.strftime('%Y-%m-%d %H:%M:%S') }})</small>
+              </p>
+              <p class="mb-0 text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                {{ last_update.records_processed }} indicators processed in last update
+              </p>
+            {% else %}
+              <p class="mb-2">
+                <strong>Last Updated:</strong> 
+                <span class="badge bg-warning">Never</span>
+              </p>
+              <p class="mb-0 text-muted">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                No update history found. Run the ETL pipeline to populate data.
+              </p>
+            {% endif %}
+          </div>
+          <div class="col-md-4 text-end">
+            <button id="update-data-btn" class="btn btn-primary">
+              <i class="fas fa-sync-alt me-2"></i>Update Data
+            </button>
+            <div id="update-status" class="mt-2" style="display: none;">
+              <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Updating...</span>
+              </div>
+              <span class="ms-2">Updating threat intelligence data...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row mt-5">
   <div class="col-md-6">
     <div class="card feature-card">
@@ -106,4 +152,71 @@
     </a>
   </div>
 </div>
+
+<script>
+// Data Update Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const updateBtn = document.getElementById('update-data-btn');
+  const updateStatus = document.getElementById('update-status');
+  
+  if (updateBtn) {
+    updateBtn.addEventListener('click', function() {
+      // Disable button and show loading
+      updateBtn.disabled = true;
+      updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+      updateStatus.style.display = 'block';
+      
+      // Call the API to update data
+      fetch('/api/update-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          updateStatus.innerHTML = `
+            <div class="text-success">
+              <i class="fas fa-check-circle me-2"></i>
+              ${data.message}
+            </div>
+          `;
+          
+          // Update the stats on the page
+          setTimeout(() => {
+            location.reload(); // Reload to show updated stats
+          }, 2000);
+        } else {
+          // Show error message
+          updateStatus.innerHTML = `
+            <div class="text-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              ${data.message}
+            </div>
+          `;
+          
+          // Re-enable button
+          updateBtn.disabled = false;
+          updateBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Update Data';
+        }
+      })
+      .catch(error => {
+        console.error('Error updating data:', error);
+        updateStatus.innerHTML = `
+          <div class="text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Failed to update data. Please try again.
+          </div>
+        `;
+        
+        // Re-enable button
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Update Data';
+      });
+    });
+  }
+});
+</script>
 {% endblock %} 
