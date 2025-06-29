@@ -68,6 +68,14 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - **Download Links**: Direct access to generated files
 - **Export Analytics**: Track report generation patterns
 
+### 📊 **Data Management & Freshness**
+- **Manual Data Updates**: One-click refresh of threat intelligence data
+- **Data Freshness Tracking**: Real-time display of last update time
+- **Update History**: Complete audit trail of all data operations
+- **Human-readable Timestamps**: Easy-to-understand time formatting
+- **Real-time Status Feedback**: Live updates during data refresh process
+- **Error Handling**: Graceful handling of update failures with user feedback
+
 ## 🛠️ Technology Stack
 
 - **Backend**: Flask (Python) with SQLAlchemy ORM
@@ -138,6 +146,9 @@ A comprehensive threat intelligence platform that provides real-time insights in
 - View real-time statistics about your threat intelligence data
 - Learn about data sources and capabilities
 - Quick navigation to all features
+- **Data Freshness Information**: See when data was last updated
+- **Manual Data Update**: Refresh threat intelligence with one click
+- **Update Status Tracking**: Real-time feedback during data refresh
 
 ### **Data Explorer**
 - Browse through 82,000+ threat indicators
@@ -197,8 +208,8 @@ The enhanced ETL pipeline downloads data from:
 harmonia-incident-response-app/
 ├── app.py                  # Main Flask application
 ├── config.py               # Configuration settings
-├── models.py               # SQLAlchemy database models (including Export model)
-├── utils.py                # Utility functions, analytics, and export tracking
+├── models.py               # SQLAlchemy database models (including Export and DataUpdate models)
+├── utils.py                # Utility functions, analytics, export tracking, and data update management
 ├── etl_pipeline.py         # Enhanced ETL pipeline for threat intelligence data
 ├── etl_pipeline_enhanced.py # Alternative ETL with additional features
 ├── openai_integration.py   # OpenAI GPT integration
@@ -210,7 +221,7 @@ harmonia-incident-response-app/
 ├── README.md              # This file
 ├── templates/             # HTML templates
 │   ├── base.html          # Base template with styling
-│   ├── index.html         # Landing page
+│   ├── index.html         # Landing page with data freshness tracking
 │   ├── data_explorer.html # Data explorer interface
 │   ├── dashboard.html     # Analytics dashboard
 │   ├── ai_insights.html   # AI chat interface
@@ -290,6 +301,7 @@ For support and questions:
 - [x] Geographic threat intelligence with country mapping
 - [x] Dynamic filtering system with real-time chart updates
 - [x] Interactive dashboard with drill-down capabilities
+- [x] Manual data update functionality
 
 ### 🔮 **Future Enhancements**
 - [ ] Real-time data updates with webhooks
@@ -370,3 +382,42 @@ Search Integration: Search results reflected in charts
 Live Data Refresh: Auto-update charts every 30 seconds
 New Indicator Alerts: Highlight recent additions
 Trend Indicators: Show increasing/decreasing trends
+
+Manual Data Update Feature Successfully Committed and Pushed!
+✅ What's Been Added:
+�� Manual Data Update System:
+DataUpdate Model: Tracks ETL pipeline runs and manual updates
+API Endpoint: /api/update-data to trigger ETL pipeline manually
+Real-time Feedback: Live status updates during data refresh
+Error Handling: Comprehensive error tracking and user feedback
+📊 Data Freshness Tracking:
+Last Update Display: Shows when data was last refreshed
+Human-readable Timestamps: "2 hours ago", "1 day ago", etc.
+Records Processed: Shows how many indicators were updated
+Update History: Complete audit trail of all data updates
+�� Enhanced Main Page:
+Data Freshness Section: Prominent display of update status
+Manual Update Button: One-click data refresh capability
+Loading States: Spinner and status messages during updates
+Success/Error Feedback: Clear visual feedback for users
+🔧 Technical Enhancements:
+Database Schema: New data_updates table for tracking
+ETL Integration: Automatic recording of pipeline runs
+Utility Functions: Time formatting and update tracking
+Flask Integration: Seamless integration with existing app
+�� Key Features:
+✅ One-click Data Refresh: Users can manually update threat intelligence
+✅ Data Freshness Visibility: Clear indication of when data was last updated
+✅ Real-time Status Updates: Live feedback during update process
+✅ Error Handling: Graceful handling of update failures
+✅ Update History: Complete audit trail of all data operations
+✅ Human-readable Timestamps: Easy-to-understand time formatting
+🎯 User Experience:
+Users can now:
+See data freshness at a glance on the main page
+Manually refresh data with a single button click
+Get real-time feedback during the update process
+View update history and processing statistics
+Understand data age with human-readable timestamps
+This makes your Harmonia Incident Response App even more user-friendly and gives users full control over their threat intelligence data freshness! 🌟
+The app now provides complete transparency about data freshness and empowers users to keep their threat intelligence current whenever needed!
